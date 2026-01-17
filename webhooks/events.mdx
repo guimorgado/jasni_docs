@@ -1,0 +1,289 @@
+---
+title: "Webhook Events"
+description: "Detailed reference for all webhook event types and their payloads"
+---
+
+## Event Structure
+
+All webhook events follow the same structure:
+
+```json
+{
+  "event": "event.type",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "data": {
+    // Event-specific data
+  }
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `event` | string | Event type identifier |
+| `timestamp` | string | ISO 8601 timestamp when event occurred |
+| `data` | object | Event-specific payload |
+
+---
+
+## email.received
+
+Triggered when a new email is received in any monitored mailbox.
+
+### Payload
+
+```json
+{
+  "event": "email.received",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "data": {
+    "id": "12345",
+    "messageId": "<abc123@example.com>",
+    "from": "sender@example.com",
+    "to": ["you@domain.com"],
+    "cc": ["colleague@domain.com"],
+    "subject": "Project Update",
+    "account": "you@domain.com",
+    "folder": "INBOX",
+    "text": "Hi,\n\nHere's the latest update...",
+    "html": "<p>Hi,</p><p>Here's the latest update...</p>",
+    "attachments": [
+      {
+        "filename": "report.pdf",
+        "contentType": "application/pdf",
+        "size": 102400
+      }
+    ]
+  }
+}
+```
+
+### Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Email UID |
+| `messageId` | string | RFC 2822 Message-ID |
+| `from` | string | Sender email address |
+| `to` | string[] | Recipients |
+| `cc` | string[] | CC recipients (optional) |
+| `subject` | string | Email subject |
+| `account` | string | Your email account |
+| `folder` | string | Mailbox folder |
+| `text` | string | Plain text body |
+| `html` | string | HTML body |
+| `attachments` | object[] | Attachment metadata |
+
+### Use Cases
+
+- AI agents processing incoming emails
+- Auto-reply systems
+- Email classification and routing
+- CRM integrations
+
+---
+
+## email.sent
+
+Triggered when an email is successfully sent via the API.
+
+### Payload
+
+```json
+{
+  "event": "email.sent",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "data": {
+    "id": "<1705312200@domain.com>",
+    "messageId": "<1705312200@domain.com>",
+    "from": "you@domain.com",
+    "to": ["recipient@example.com"],
+    "cc": ["copy@example.com"],
+    "subject": "Hello from Jasni!",
+    "account": "you@domain.com",
+    "text": "Message content...",
+    "html": "<p>Message content...</p>"
+  }
+}
+```
+
+### Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Email Message-ID |
+| `messageId` | string | RFC 2822 Message-ID |
+| `from` | string | Sender address |
+| `to` | string[] | Recipients |
+| `cc` | string[] | CC recipients (optional) |
+| `subject` | string | Email subject |
+| `account` | string | Sending account |
+| `text` | string | Plain text body |
+| `html` | string | HTML body |
+
+### Use Cases
+
+- Tracking sent emails
+- Analytics and reporting
+- Confirmation workflows
+
+---
+
+## email.bounced
+
+Triggered when an email fails to deliver (bounce).
+
+### Payload
+
+```json
+{
+  "event": "email.bounced",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "data": {
+    "id": "<bounced123@domain.com>",
+    "messageId": "<bounced123@domain.com>",
+    "from": "you@domain.com",
+    "to": ["invalid@example.com"],
+    "subject": "Original subject",
+    "account": "you@domain.com",
+    "bounceReason": "550 5.1.1 User unknown"
+  }
+}
+```
+
+### Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Original message ID |
+| `messageId` | string | Original Message-ID |
+| `from` | string | Original sender |
+| `to` | string[] | Failed recipients |
+| `subject` | string | Original subject |
+| `account` | string | Sending account |
+| `bounceReason` | string | Bounce error message |
+
+### Use Cases
+
+- Clean invalid addresses from lists
+- Notify users of delivery failures
+- Monitor email deliverability
+
+---
+
+## email.spam
+
+Triggered when an email is identified or marked as spam.
+
+### Payload
+
+```json
+{
+  "event": "email.spam",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "data": {
+    "id": "67890",
+    "messageId": "<spam456@spammer.com>",
+    "from": "spammer@suspicious.com",
+    "to": ["you@domain.com"],
+    "subject": "You've won!!!",
+    "account": "you@domain.com",
+    "folder": "Spam"
+  }
+}
+```
+
+### Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Email UID |
+| `messageId` | string | Message-ID |
+| `from` | string | Sender address |
+| `to` | string[] | Recipients |
+| `subject` | string | Email subject |
+| `account` | string | Your email account |
+| `folder` | string | Spam folder name |
+
+### Use Cases
+
+- Spam analytics
+- Security monitoring
+- Training spam filters
+
+---
+
+## email.deleted
+
+Triggered when an email is deleted via the API.
+
+### Payload
+
+```json
+{
+  "event": "email.deleted",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "data": {
+    "id": "12345",
+    "account": "you@domain.com"
+  }
+}
+```
+
+### Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Deleted email UID |
+| `account` | string | Email account |
+
+### Use Cases
+
+- Audit logging
+- Sync with external systems
+- Compliance tracking
+
+---
+
+## Example Handler
+
+Handle all events in one endpoint:
+
+```javascript
+app.post('/webhooks/jasni', (req, res) => {
+  const { event, timestamp, data } = req.body;
+  
+  console.log(`[${timestamp}] ${event}`);
+  
+  switch (event) {
+    case 'email.received':
+      // New email arrived
+      await processIncomingEmail(data);
+      break;
+      
+    case 'email.sent':
+      // Email sent successfully
+      await logSentEmail(data);
+      break;
+      
+    case 'email.bounced':
+      // Email failed to deliver
+      await handleBounce(data);
+      break;
+      
+    case 'email.spam':
+      // Spam detected
+      await logSpam(data);
+      break;
+      
+    case 'email.deleted':
+      // Email deleted
+      await syncDeletion(data);
+      break;
+      
+    default:
+      console.log('Unknown event:', event);
+  }
+  
+  res.status(200).send('OK');
+});
+```

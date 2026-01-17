@@ -1,16 +1,19 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "OpenAPI Plant Store",
-    "description": "A sample API that uses a plant store as an example to demonstrate features in the OpenAPI specification",
-    "license": {
-      "name": "MIT"
-    },
-    "version": "1.0.0"
+    "title": "Jasni AI API",
+    "description": "API for managing emails, labels, and webhooks programmatically. Build AI-powered email automation, agents, and integrations.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Jasni Support",
+      "email": "support@jasni.ai",
+      "url": "https://jasni.ai"
+    }
   },
   "servers": [
     {
-      "url": "http://sandbox.mintlify.com"
+      "url": "https://api.jasni.ai/api/v1",
+      "description": "Production server"
     }
   ],
   "security": [
@@ -19,36 +22,59 @@
     }
   ],
   "paths": {
-    "/plants": {
+    "/emails": {
       "get": {
-        "description": "Returns all plants from the system that the user has access to",
+        "operationId": "listEmails",
+        "summary": "List emails",
+        "description": "Retrieve a list of emails from a specified email account. If no account is specified, returns available accounts.",
+        "tags": ["Emails"],
         "parameters": [
+          {
+            "name": "account",
+            "in": "query",
+            "description": "Email account to fetch from (e.g., user@example.com)",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          {
+            "name": "folder",
+            "in": "query",
+            "description": "Folder to fetch from",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "INBOX"
+            }
+          },
           {
             "name": "limit",
             "in": "query",
-            "description": "The maximum number of results to return",
+            "description": "Number of emails to fetch (max 100)",
+            "required": false,
             "schema": {
               "type": "integer",
-              "format": "int32"
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Plant response",
+            "description": "List of emails or accounts",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Plant"
-                  }
+                  "$ref": "#/components/schemas/EmailListResponse"
                 }
               }
             }
           },
-          "400": {
-            "description": "Unexpected error",
+          "401": {
+            "description": "Unauthorized",
             "content": {
               "application/json": {
                 "schema": {
@@ -56,35 +82,9 @@
                 }
               }
             }
-          }
-        }
-      },
-      "post": {
-        "description": "Creates a new plant in the store",
-        "requestBody": {
-          "description": "Plant to add to the store",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NewPlant"
-              }
-            }
           },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "plant response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Plant"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "unexpected error",
+          "404": {
+            "description": "Account not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -96,28 +96,194 @@
         }
       }
     },
-    "/plants/{id}": {
-      "delete": {
-        "description": "Deletes a single plant based on the ID supplied",
+    "/emails/{id}": {
+      "get": {
+        "operationId": "getEmail",
+        "summary": "Get email",
+        "description": "Retrieve a specific email by its UID",
+        "tags": ["Emails"],
         "parameters": [
           {
             "name": "id",
             "in": "path",
-            "description": "ID of plant to delete",
+            "description": "Email UID",
             "required": true,
             "schema": {
-              "type": "integer",
-              "format": "int64"
+              "type": "integer"
+            }
+          },
+          {
+            "name": "account",
+            "in": "query",
+            "description": "Email account",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          {
+            "name": "folder",
+            "in": "query",
+            "description": "Folder where the email is located",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "INBOX"
             }
           }
         ],
         "responses": {
-          "204": {
-            "description": "Plant deleted",
-            "content": {}
+          "200": {
+            "description": "Email details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailResponse"
+                }
+              }
+            }
           },
           "400": {
-            "description": "unexpected error",
+            "description": "Invalid email ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Email not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateEmail",
+        "summary": "Update email",
+        "description": "Update email flags (mark as read/unread)",
+        "tags": ["Emails"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Email UID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "account",
+            "in": "query",
+            "description": "Email account",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          {
+            "name": "folder",
+            "in": "query",
+            "description": "Folder where the email is located",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "INBOX"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEmailRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteEmail",
+        "summary": "Delete email",
+        "description": "Delete a specific email by its UID",
+        "tags": ["Emails"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Email UID",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "account",
+            "in": "query",
+            "description": "Email account",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          {
+            "name": "folder",
+            "in": "query",
+            "description": "Folder where the email is located",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "INBOX"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Email not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -128,89 +294,1191 @@
           }
         }
       }
-    }
-  },
-  "webhooks": {
-    "/plant/webhook": {
+    },
+    "/emails/send": {
       "post": {
-        "description": "Information about a new plant added to the store",
+        "operationId": "sendEmail",
+        "summary": "Send email",
+        "description": "Send a new email from one of your email accounts",
+        "tags": ["Emails"],
         "requestBody": {
-          "description": "Plant added to the store",
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/NewPlant"
+                "$ref": "#/components/schemas/SendEmailRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Return a 200 status to indicate that the data was received successfully"
+            "description": "Email sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendEmailResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Email account not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/emails/{id}/reply": {
+      "post": {
+        "operationId": "replyToEmail",
+        "summary": "Reply to email",
+        "description": "Reply to an existing email. Automatically handles threading headers.",
+        "tags": ["Emails"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Email UID to reply to",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "account",
+            "in": "query",
+            "description": "Email account",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          {
+            "name": "folder",
+            "in": "query",
+            "description": "Folder where the original email is located",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "INBOX"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReplyEmailRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reply sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplyEmailResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Original email not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/emails/{id}/forward": {
+      "post": {
+        "operationId": "forwardEmail",
+        "summary": "Forward email",
+        "description": "Forward an existing email to new recipients",
+        "tags": ["Emails"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Email UID to forward",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "account",
+            "in": "query",
+            "description": "Email account",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          {
+            "name": "folder",
+            "in": "query",
+            "description": "Folder where the original email is located",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "INBOX"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForwardEmailRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email forwarded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForwardEmailResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Original email not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+    "/labels": {
+      "get": {
+        "operationId": "listLabels",
+        "summary": "List labels",
+        "description": "Retrieve all labels for the authenticated user",
+        "tags": ["Labels"],
+        "parameters": [
+          {
+            "name": "include_count",
+            "in": "query",
+            "description": "Include email count per label",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of labels",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createLabel",
+        "summary": "Create label",
+        "description": "Create a new label for organizing emails",
+        "tags": ["Labels"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLabelRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Label created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Label already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhooks": {
+      "get": {
+        "operationId": "listWebhooks",
+        "summary": "List webhooks",
+        "description": "Retrieve all webhooks for the authenticated user",
+        "tags": ["Webhooks"],
+        "responses": {
+          "200": {
+            "description": "List of webhooks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createWebhook",
+        "summary": "Create webhook",
+        "description": "Create a new webhook endpoint to receive email events",
+        "tags": ["Webhooks"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWebhookRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or limit reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateWebhook",
+        "summary": "Update webhook",
+        "description": "Update an existing webhook configuration",
+        "tags": ["Webhooks"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWebhookRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Webhook not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteWebhook",
+        "summary": "Delete webhook",
+        "description": "Delete a webhook endpoint",
+        "tags": ["Webhooks"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "Webhook ID to delete",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Webhook deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Webhook not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           }
         }
       }
     }
   },
   "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "API key authentication using Bearer token. Get your API key from the Jasni dashboard."
+      }
+    },
     "schemas": {
-      "Plant": {
-        "required": [
-          "name"
-        ],
-        "type": "object",
-        "properties": {
-          "name": {
-            "description": "The name of the plant",
-            "type": "string"
-          },
-          "tag": {
-            "description": "Tag to specify the type",
-            "type": "string"
-          }
-        }
-      },
-      "NewPlant": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Plant"
-          },
-          {
-            "required": [
-              "id"
-            ],
-            "type": "object",
-            "properties": {
-              "id": {
-                "description": "Identification number of the plant",
-                "type": "integer",
-                "format": "int64"
-              }
-            }
-          }
-        ]
-      },
       "Error": {
-        "required": [
-          "error",
-          "message"
-        ],
         "type": "object",
         "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
           "error": {
-            "type": "integer",
-            "format": "int32"
+            "type": "string",
+            "description": "Error message"
+          }
+        },
+        "required": ["success", "error"]
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
           },
           "message": {
             "type": "string"
           }
         }
-      }
-    },
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer"
+      },
+      "Email": {
+        "type": "object",
+        "properties": {
+          "uid": {
+            "type": "integer",
+            "description": "Unique identifier for the email"
+          },
+          "messageId": {
+            "type": "string",
+            "description": "RFC 2822 Message-ID"
+          },
+          "from": {
+            "type": "string",
+            "description": "Sender email address"
+          },
+          "to": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Recipient email addresses"
+          },
+          "cc": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "CC recipients"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Email date"
+          },
+          "text": {
+            "type": "string",
+            "description": "Plain text body"
+          },
+          "html": {
+            "type": "string",
+            "description": "HTML body"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Attachment"
+            }
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Email flags (e.g., \\Seen, \\Flagged)"
+          }
+        }
+      },
+      "Attachment": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string"
+          },
+          "contentType": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer"
+          }
+        }
+      },
+      "EmailListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "emails": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Email"
+                }
+              },
+              "folder": {
+                "type": "string"
+              },
+              "total": {
+                "type": "integer"
+              },
+              "account": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "EmailResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "email": {
+                "$ref": "#/components/schemas/Email"
+              }
+            }
+          }
+        }
+      },
+      "SendEmailRequest": {
+        "type": "object",
+        "required": ["from", "to", "subject"],
+        "properties": {
+          "from": {
+            "type": "string",
+            "format": "email",
+            "description": "Sender email (must be an account you own)"
+          },
+          "to": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "email"
+                }
+              }
+            ],
+            "description": "Recipient(s)"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject"
+          },
+          "text": {
+            "type": "string",
+            "description": "Plain text body"
+          },
+          "html": {
+            "type": "string",
+            "description": "HTML body"
+          },
+          "cc": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "email"
+                }
+              }
+            ],
+            "description": "CC recipients"
+          },
+          "bcc": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "email"
+                }
+              }
+            ],
+            "description": "BCC recipients"
+          },
+          "replyTo": {
+            "type": "string",
+            "format": "email",
+            "description": "Reply-to address"
+          }
+        }
+      },
+      "SendEmailResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "messageId": {
+            "type": "string"
+          },
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "array",
+                "items": {
+            "type": "string"
+                }
+              },
+              "subject": {
+                "type": "string"
+              },
+              "savedToSent": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "UpdateEmailRequest": {
+        "type": "object",
+        "required": ["action"],
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["read", "unread"],
+            "description": "Action to perform"
+          }
+        }
+      },
+      "ReplyEmailRequest": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Plain text reply body"
+          },
+          "html": {
+            "type": "string",
+            "description": "HTML reply body"
+          },
+          "replyAll": {
+            "type": "boolean",
+            "default": false,
+            "description": "Reply to all recipients"
+          },
+          "includeOriginal": {
+            "type": "boolean",
+            "default": true,
+            "description": "Include original message in reply"
+          }
+        }
+      },
+      "ReplyEmailResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "messageId": {
+                "type": "string"
+              },
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "cc": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "subject": {
+                "type": "string"
+              },
+              "inReplyTo": {
+                "type": "string"
+              },
+              "references": {
+                "type": "string"
+              },
+              "savedToSent": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "ForwardEmailRequest": {
+        "type": "object",
+        "required": ["to"],
+        "properties": {
+          "to": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "email"
+                }
+              }
+            ],
+            "description": "Recipient(s) to forward to"
+          },
+          "cc": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "email"
+                }
+              }
+            ],
+            "description": "CC recipients"
+          },
+          "bcc": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "email"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "email"
+                }
+              }
+            ],
+            "description": "BCC recipients"
+          },
+          "text": {
+            "type": "string",
+            "description": "Optional message to include before forwarded content"
+          },
+          "html": {
+            "type": "string",
+            "description": "Optional HTML message"
+          },
+          "includeOriginal": {
+            "type": "boolean",
+            "default": true,
+            "description": "Include original email content"
+          }
+        }
+      },
+      "ForwardEmailResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "messageId": {
+                "type": "string"
+              },
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "subject": {
+                "type": "string"
+              },
+              "savedToSent": {
+                "type": "boolean"
+              },
+              "forwardedFrom": {
+                "type": "object",
+                "properties": {
+                  "uid": {
+                    "type": "integer"
+                  },
+                  "from": {
+                    "type": "string"
+                  },
+                  "subject": {
+                    "type": "string"
+                  },
+                  "date": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Label": {
+            "type": "object",
+            "properties": {
+              "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "description": "Hex color code"
+          },
+          "description": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "email_count": {
+                "type": "integer",
+            "description": "Number of emails with this label (when include_count=true)"
+          }
+        }
+      },
+      "LabelListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "labels": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Label"
+                }
+              },
+              "total": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "CreateLabelRequest": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "description": "Label name"
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$",
+            "description": "Hex color code (e.g., #ff0000)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Label description"
+          }
+        }
+      },
+      "LabelResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "$ref": "#/components/schemas/Label"
+              }
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "Webhook": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["email.received", "email.sent", "email.bounced", "email.spam", "email.deleted"]
+            }
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "description": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "secret": {
+            "type": "string",
+            "description": "Webhook signing secret (only returned on creation)"
+          }
+        }
+      },
+      "WebhookListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "webhooks": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Webhook"
+                }
+              }
+            }
+          }
+        }
+      },
+      "CreateWebhookRequest": {
+        "type": "object",
+        "required": ["url", "events"],
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Webhook endpoint URL (must be HTTPS in production)"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["email.received", "email.sent", "email.bounced", "email.spam", "email.deleted"]
+            },
+            "minItems": 1,
+            "description": "Events to subscribe to"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional description"
+          }
+        }
+      },
+      "UpdateWebhookRequest": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Webhook ID to update"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "New webhook URL"
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["email.received", "email.sent", "email.bounced", "email.spam", "email.deleted"]
+            },
+            "minItems": 1,
+            "description": "New events to subscribe to"
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Enable or disable the webhook"
+          },
+          "description": {
+            "type": "string",
+            "description": "New description"
+          }
+        }
+      },
+      "WebhookResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "webhook": {
+                "$ref": "#/components/schemas/Webhook"
+              }
+            }
+          }
+        }
+      },
+      "WebhookPayload": {
+        "type": "object",
+        "description": "Payload sent to webhook endpoints",
+        "properties": {
+          "event": {
+            "type": "string",
+            "enum": ["email.received", "email.sent", "email.bounced", "email.spam", "email.deleted"]
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "messageId": {
+                "type": "string"
+              },
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              "cc": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              "subject": {
+                "type": "string"
+              },
+              "account": {
+                "type": "string"
+              },
+              "folder": {
+                "type": "string"
+              },
+              "text": {
+                "type": "string"
+              },
+              "html": {
+                "type": "string"
+              },
+              "attachments": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Attachment"
+                }
+              }
+            }
+          }
+        }
       }
     }
   }

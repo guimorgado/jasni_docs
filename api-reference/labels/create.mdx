@@ -1,0 +1,234 @@
+---
+title: "Create Label"
+api: "POST /api/v1/labels"
+description: "Create a new label for organizing emails"
+---
+
+## Request Body
+
+<ParamField body="name" type="string" required>
+  Label name (1-50 characters)
+</ParamField>
+
+<ParamField body="color" type="string">
+  Hex color code (e.g., `#ff0000`). If not provided, a random color is assigned.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional description for the label
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the label was created successfully
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="properties">
+    <ResponseField name="label" type="object">
+      The created label object
+      <Expandable title="properties">
+        <ResponseField name="id" type="string">
+          Unique identifier (UUID)
+        </ResponseField>
+        <ResponseField name="name" type="string">
+          Label name
+        </ResponseField>
+        <ResponseField name="color" type="string">
+          Hex color code
+        </ResponseField>
+        <ResponseField name="description" type="string">
+          Description
+        </ResponseField>
+        <ResponseField name="created_at" type="string">
+          ISO 8601 creation timestamp
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Success message
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.jasni.ai/api/v1/labels \
+  -H "Authorization: Bearer jsk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Urgent",
+    "color": "#ef4444",
+    "description": "Requires immediate attention"
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.jasni.ai/api/v1/labels', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer jsk_your_api_key',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    name: 'Urgent',
+    color: '#ef4444',
+    description: 'Requires immediate attention',
+  }),
+});
+
+const data = await response.json();
+console.log('Created label:', data.data.label);
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.jasni.ai/api/v1/labels',
+    headers={
+        'Authorization': 'Bearer jsk_your_api_key',
+        'Content-Type': 'application/json',
+    },
+    json={
+        'name': 'Urgent',
+        'color': '#ef4444',
+        'description': 'Requires immediate attention',
+    }
+)
+
+label = response.json()['data']['label']
+print(f"Created: {label['name']} ({label['id']})")
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "data": {
+    "label": {
+      "id": "550e8400-e29b-41d4-a716-446655440002",
+      "name": "Urgent",
+      "color": "#ef4444",
+      "description": "Requires immediate attention",
+      "created_at": "2024-01-15T11:00:00Z"
+    }
+  },
+  "message": "Label created successfully"
+}
+```
+
+```json Success - Auto color
+{
+  "success": true,
+  "data": {
+    "label": {
+      "id": "550e8400-e29b-41d4-a716-446655440003",
+      "name": "Customer",
+      "color": "#8b5cf6",
+      "description": null,
+      "created_at": "2024-01-15T11:05:00Z"
+    }
+  },
+  "message": "Label created successfully"
+}
+```
+
+```json Error - Name required
+{
+  "success": false,
+  "error": "Label name is required"
+}
+```
+
+```json Error - Name too long
+{
+  "success": false,
+  "error": "Label name must be 1-50 characters"
+}
+```
+
+```json Error - Invalid color
+{
+  "success": false,
+  "error": "Invalid color format. Use hex (e.g., #ff0000)"
+}
+```
+
+```json Error - Already exists
+{
+  "success": false,
+  "error": "A label with this name already exists"
+}
+```
+</ResponseExample>
+
+## Validation
+
+### Name
+- Required
+- 1-50 characters
+- Must be unique per user
+
+### Color
+- Optional (random color assigned if not provided)
+- Must be valid hex format: `#RRGGBB`
+- Examples: `#ff0000` (red), `#00ff00` (green), `#0000ff` (blue)
+
+## Default Color Palette
+
+If no color is specified, one of these colors is randomly assigned:
+
+| Color | Hex |
+|-------|-----|
+| Indigo | `#6366f1` |
+| Violet | `#8b5cf6` |
+| Purple | `#a855f7` |
+| Fuchsia | `#d946ef` |
+| Pink | `#ec4899` |
+| Red | `#ef4444` |
+| Orange | `#f97316` |
+| Amber | `#f59e0b` |
+| Green | `#22c55e` |
+| Cyan | `#0ea5e9` |
+
+## Use Cases
+
+### AI Classification Labels
+
+Create labels for your AI agent to classify emails:
+
+```javascript
+const classificationLabels = [
+  { name: 'Support Request', color: '#3b82f6' },
+  { name: 'Sales Inquiry', color: '#22c55e' },
+  { name: 'Partnership', color: '#8b5cf6' },
+  { name: 'Spam', color: '#ef4444' },
+  { name: 'Needs Review', color: '#f59e0b' },
+];
+
+for (const label of classificationLabels) {
+  await fetch('https://api.jasni.ai/api/v1/labels', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer jsk_your_api_key',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(label),
+  });
+}
+```
+
+### Priority Labels
+
+```javascript
+const priorityLabels = [
+  { name: 'P1 - Critical', color: '#dc2626', description: 'Respond within 1 hour' },
+  { name: 'P2 - High', color: '#f97316', description: 'Respond within 4 hours' },
+  { name: 'P3 - Normal', color: '#eab308', description: 'Respond within 24 hours' },
+  { name: 'P4 - Low', color: '#22c55e', description: 'Respond within 1 week' },
+];
+```

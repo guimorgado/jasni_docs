@@ -1,0 +1,212 @@
+---
+title: "Webhooks Overview"
+description: "Receive real-time notifications for email events"
+---
+
+## What are Webhooks?
+
+Webhooks are HTTP callbacks that notify your application when events occur in Jasni. Instead of polling the API to check for new emails, webhooks push data to your server in real-time.
+
+<CardGroup cols={2}>
+  <Card title="Real-time" icon="bolt">
+    Get notified instantly when events happen
+  </Card>
+  <Card title="Efficient" icon="gauge">
+    No need to poll the API repeatedly
+  </Card>
+  <Card title="Secure" icon="lock">
+    Signed payloads prevent tampering
+  </Card>
+  <Card title="Reliable" icon="rotate">
+    Automatic retries on failure
+  </Card>
+</CardGroup>
+
+## Quick Start
+
+### 1. Create a Webhook Endpoint
+
+First, create an HTTP endpoint on your server to receive webhooks:
+
+```javascript
+// Express.js example
+app.post('/webhooks/jasni', express.json(), (req, res) => {
+  const { event, data } = req.body;
+  
+  console.log(`Received ${event}:`, data);
+  
+  // Process the event
+  switch (event) {
+    case 'email.received':
+      handleNewEmail(data);
+      break;
+    case 'email.sent':
+      handleSentEmail(data);
+      break;
+  }
+  
+  // Always respond with 200
+  res.status(200).send('OK');
+});
+```
+
+### 2. Register the Webhook
+
+Use the API to register your endpoint:
+
+```bash
+curl -X POST https://api.jasni.ai/api/v1/webhooks \
+  -H "Authorization: Bearer jsk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://your-server.com/webhooks/jasni",
+    "events": ["email.received", "email.sent"]
+  }'
+```
+
+### 3. Save the Secret
+
+The response includes a `secret` - save it securely:
+
+```json
+{
+  "success": true,
+  "data": {
+    "webhook": {
+      "id": "webhook-id",
+      "secret": "whsec_abc123..."
+    }
+  }
+}
+```
+
+### 4. Verify Signatures
+
+Always verify that webhooks are from Jasni:
+
+```javascript
+const crypto = require('crypto');
+
+function verifySignature(payload, signature, secret) {
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+  
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expected)
+  );
+}
+
+app.post('/webhooks/jasni', express.raw({ type: 'application/json' }), (req, res) => {
+  const signature = req.headers['x-webhook-signature'];
+  const payload = req.body.toString();
+  
+  if (!verifySignature(payload, signature, process.env.WEBHOOK_SECRET)) {
+    return res.status(401).send('Invalid signature');
+  }
+  
+  // Process verified webhook
+  const data = JSON.parse(payload);
+  // ...
+});
+```
+
+## Available Events
+
+| Event | Trigger |
+|-------|---------|
+| `email.received` | New email arrives in mailbox |
+| `email.sent` | Email sent successfully |
+| `email.bounced` | Email delivery failed |
+| `email.spam` | Email marked as spam |
+| `email.deleted` | Email was deleted |
+
+<Card title="Event Reference" icon="list" href="/webhooks/events">
+  See detailed payload schemas for each event
+</Card>
+
+## Webhook Payload
+
+Every webhook includes:
+
+```json
+{
+  "event": "email.received",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "data": {
+    "id": "12345",
+    "messageId": "<abc@example.com>",
+    "from": "sender@example.com",
+    "to": ["you@domain.com"],
+    "subject": "Hello!",
+    "account": "you@domain.com",
+    "folder": "INBOX",
+    "text": "Email content...",
+    "html": "<p>Email content...</p>"
+  }
+}
+```
+
+## Headers
+
+Each webhook request includes:
+
+| Header | Description |
+|--------|-------------|
+| `Content-Type` | `application/json` |
+| `X-Webhook-Signature` | HMAC-SHA256 signature |
+| `X-Webhook-Timestamp` | Unix timestamp |
+| `X-Webhook-Event` | Event type |
+| `User-Agent` | `JasniAI-Webhooks/1.0` |
+
+## Retry Policy
+
+If your endpoint fails (non-2xx response or timeout), Jasni retries:
+
+| Attempt | Delay |
+|---------|-------|
+| 1st | Immediate |
+| 2nd | 10 seconds |
+| 3rd | 60 seconds |
+| 4th | 5 minutes |
+
+After 3 failed retries, the delivery is marked as failed.
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Respond quickly" icon="clock">
+    Return a `200` response immediately, then process the event asynchronously. Webhooks timeout after 30 seconds.
+  </Accordion>
+  
+  <Accordion title="Handle duplicates" icon="copy">
+    Your endpoint should be idempotent. The same event might be delivered multiple times.
+  </Accordion>
+  
+  <Accordion title="Verify signatures" icon="shield-check">
+    Always verify the `X-Webhook-Signature` header to ensure requests are from Jasni.
+  </Accordion>
+  
+  <Accordion title="Use HTTPS" icon="lock">
+    Always use HTTPS endpoints in production to protect webhook data in transit.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Event Reference" icon="bolt" href="/webhooks/events">
+    Detailed payload schemas
+  </Card>
+  <Card title="Security" icon="shield" href="/webhooks/security">
+    Signature verification guide
+  </Card>
+  <Card title="Best Practices" icon="lightbulb" href="/webhooks/best-practices">
+    Production recommendations
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/webhooks/create">
+    Create webhook endpoint
+  </Card>
+</CardGroup>

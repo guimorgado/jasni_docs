@@ -1,0 +1,208 @@
+---
+title: "Update Webhook"
+api: "PATCH /api/v1/webhooks"
+description: "Update an existing webhook configuration"
+---
+
+## Request Body
+
+<ParamField body="id" type="string" required>
+  Webhook ID to update
+</ParamField>
+
+<ParamField body="url" type="string">
+  New webhook endpoint URL
+</ParamField>
+
+<ParamField body="events" type="array">
+  New events to subscribe to. Must include at least one event.
+</ParamField>
+
+<ParamField body="active" type="boolean">
+  Enable or disable the webhook
+</ParamField>
+
+<ParamField body="description" type="string">
+  New description
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the update was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="properties">
+    <ResponseField name="webhook" type="object">
+      The updated webhook object
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL - Update URL
+curl -X PATCH https://api.jasni.ai/api/v1/webhooks \
+  -H "Authorization: Bearer jsk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "url": "https://new-server.com/webhooks"
+  }'
+```
+
+```bash cURL - Disable webhook
+curl -X PATCH https://api.jasni.ai/api/v1/webhooks \
+  -H "Authorization: Bearer jsk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "active": false
+  }'
+```
+
+```javascript JavaScript
+// Update events
+const response = await fetch('https://api.jasni.ai/api/v1/webhooks', {
+  method: 'PATCH',
+  headers: {
+    'Authorization': 'Bearer jsk_your_api_key',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    id: '550e8400-e29b-41d4-a716-446655440000',
+    events: ['email.received', 'email.bounced'],
+  }),
+});
+
+const data = await response.json();
+console.log('Updated webhook:', data.data.webhook);
+```
+
+```python Python
+import requests
+
+# Disable webhook
+response = requests.patch(
+    'https://api.jasni.ai/api/v1/webhooks',
+    headers={
+        'Authorization': 'Bearer jsk_your_api_key',
+        'Content-Type': 'application/json',
+    },
+    json={
+        'id': '550e8400-e29b-41d4-a716-446655440000',
+        'active': False,
+    }
+)
+
+print(response.json())
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "data": {
+    "webhook": {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "url": "https://new-server.com/webhooks",
+      "events": ["email.received", "email.sent"],
+      "active": true,
+      "description": "Production webhook",
+      "created_at": "2024-01-15T10:30:00Z",
+      "updated_at": "2024-01-15T14:20:00Z"
+    }
+  }
+}
+```
+
+```json Success - Disabled
+{
+  "success": true,
+  "data": {
+    "webhook": {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "url": "https://your-server.com/webhooks",
+      "events": ["email.received", "email.sent"],
+      "active": false,
+      "description": "Production webhook",
+      "created_at": "2024-01-15T10:30:00Z",
+      "updated_at": "2024-01-15T14:25:00Z"
+    }
+  }
+}
+```
+
+```json Error - Not found
+{
+  "success": false,
+  "error": "Webhook not found"
+}
+```
+
+```json Error - No fields
+{
+  "success": false,
+  "error": "No fields to update"
+}
+```
+
+```json Error - Invalid URL
+{
+  "success": false,
+  "error": "URL must use HTTP or HTTPS"
+}
+```
+</ResponseExample>
+
+## Update Examples
+
+### Change Webhook URL
+
+```javascript
+await updateWebhook({
+  id: 'webhook-id',
+  url: 'https://new-endpoint.com/webhook',
+});
+```
+
+### Add New Events
+
+```javascript
+await updateWebhook({
+  id: 'webhook-id',
+  events: ['email.received', 'email.sent', 'email.bounced'],
+});
+```
+
+### Temporarily Disable
+
+```javascript
+// Disable during maintenance
+await updateWebhook({
+  id: 'webhook-id',
+  active: false,
+});
+
+// Re-enable after maintenance
+await updateWebhook({
+  id: 'webhook-id',
+  active: true,
+});
+```
+
+### Update Description
+
+```javascript
+await updateWebhook({
+  id: 'webhook-id',
+  description: 'Updated: Production webhook for AI agent',
+});
+```
+
+## Notes
+
+- At least one field (besides `id`) must be provided to update
+- The webhook secret cannot be changed - delete and recreate if needed
+- Changes take effect immediately

@@ -1,0 +1,291 @@
+---
+title: "Webhook Security"
+description: "How to verify webhook signatures and secure your endpoints"
+---
+
+## Why Verify Signatures?
+
+When you receive a webhook, you need to verify it actually came from Jasni and hasn't been tampered with. Without verification, attackers could:
+
+- Send fake events to your endpoint
+- Modify legitimate payloads in transit
+- Trigger unintended actions in your system
+
+## Signature Verification
+
+Every webhook request includes a signature in the `X-Webhook-Signature` header. This signature is an HMAC-SHA256 hash of the request body, signed with your webhook secret.
+
+### How It Works
+
+```
+Signature = HMAC-SHA256(request_body, webhook_secret)
+```
+
+1. Jasni creates the request body (JSON payload)
+2. Computes HMAC-SHA256 using your webhook secret
+3. Includes the signature in the `X-Webhook-Signature` header
+4. Sends the request to your endpoint
+
+### Verification Steps
+
+1. Get the signature from the header
+2. Compute your own HMAC-SHA256 of the raw body
+3. Compare signatures using a timing-safe function
+4. Reject if they don't match
+
+## Implementation
+
+<Tabs>
+  <Tab title="Node.js">
+    ```javascript
+    const crypto = require('crypto');
+
+    function verifyWebhookSignature(payload, signature, secret) {
+      const expectedSignature = crypto
+        .createHmac('sha256', secret)
+        .update(payload)
+        .digest('hex');
+      
+      // Use timing-safe comparison to prevent timing attacks
+      return crypto.timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(expectedSignature)
+      );
+    }
+
+    // Express.js middleware
+    function webhookMiddleware(req, res, next) {
+      const signature = req.headers['x-webhook-signature'];
+      const timestamp = req.headers['x-webhook-timestamp'];
+      const payload = req.rawBody; // Need raw body, not parsed JSON
+      
+      if (!signature) {
+        return res.status(401).json({ error: 'Missing signature' });
+      }
+      
+      // Optional: Check timestamp to prevent replay attacks
+      const now = Math.floor(Date.now() / 1000);
+      const requestTime = parseInt(timestamp);
+      if (Math.abs(now - requestTime) > 300) { // 5 minute tolerance
+        return res.status(401).json({ error: 'Request too old' });
+      }
+      
+      if (!verifyWebhookSignature(payload, signature, process.env.WEBHOOK_SECRET)) {
+        return res.status(401).json({ error: 'Invalid signature' });
+      }
+      
+      next();
+    }
+
+    // Usage with Express
+    app.post('/webhooks/jasni', 
+      express.raw({ type: 'application/json' }),
+      webhookMiddleware,
+      (req, res) => {
+        const event = JSON.parse(req.rawBody);
+        // Process verified event
+        res.status(200).send('OK');
+      }
+    );
+    ```
+  </Tab>
+  
+  <Tab title="Python">
+    ```python
+    import hmac
+    import hashlib
+    import time
+    from flask import Flask, request, jsonify
+
+    app = Flask(__name__)
+    WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET')
+
+    def verify_webhook_signature(payload: bytes, signature: str, secret: str) -> bool:
+        expected = hmac.new(
+            secret.encode('utf-8'),
+            payload,
+            hashlib.sha256
+        ).hexdigest()
+        
+        # Use compare_digest for timing-safe comparison
+        return hmac.compare_digest(signature, expected)
+
+    @app.route('/webhooks/jasni', methods=['POST'])
+    def handle_webhook():
+        signature = request.headers.get('X-Webhook-Signature')
+        timestamp = request.headers.get('X-Webhook-Timestamp')
+        payload = request.get_data()
+        
+        if not signature:
+            return jsonify({'error': 'Missing signature'}), 401
+        
+        # Optional: Check timestamp for replay protection
+        now = int(time.time())
+        request_time = int(timestamp)
+        if abs(now - request_time) > 300:  # 5 minute tolerance
+            return jsonify({'error': 'Request too old'}), 401
+        
+        if not verify_webhook_signature(payload, signature, WEBHOOK_SECRET):
+            return jsonify({'error': 'Invalid signature'}), 401
+        
+        # Process verified event
+        event = request.get_json()
+        print(f"Received: {event['event']}")
+        
+        return 'OK', 200
+    ```
+  </Tab>
+  
+  <Tab title="Go">
+    ```go
+    package main
+
+    import (
+        "crypto/hmac"
+        "crypto/sha256"
+        "encoding/hex"
+        "io"
+        "net/http"
+        "os"
+        "strconv"
+        "time"
+    )
+
+    func verifySignature(payload []byte, signature, secret string) bool {
+        mac := hmac.New(sha256.New, []byte(secret))
+        mac.Write(payload)
+        expected := hex.EncodeToString(mac.Sum(nil))
+        return hmac.Equal([]byte(signature), []byte(expected))
+    }
+
+    func webhookHandler(w http.ResponseWriter, r *http.Request) {
+        signature := r.Header.Get("X-Webhook-Signature")
+        timestamp := r.Header.Get("X-Webhook-Timestamp")
+        
+        if signature == "" {
+            http.Error(w, "Missing signature", http.StatusUnauthorized)
+            return
+        }
+        
+        // Check timestamp
+        ts, _ := strconv.ParseInt(timestamp, 10, 64)
+        if time.Now().Unix()-ts > 300 {
+            http.Error(w, "Request too old", http.StatusUnauthorized)
+            return
+        }
+        
+        payload, _ := io.ReadAll(r.Body)
+        
+        if !verifySignature(payload, signature, os.Getenv("WEBHOOK_SECRET")) {
+            http.Error(w, "Invalid signature", http.StatusUnauthorized)
+            return
+        }
+        
+        // Process verified event
+        w.WriteHeader(http.StatusOK)
+        w.Write([]byte("OK"))
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Important Considerations
+
+### Use Raw Body
+
+<Warning>
+  You must use the **raw request body** for signature verification, not a parsed/serialized version. JSON parsing and re-serialization can change whitespace, key order, etc.
+</Warning>
+
+```javascript
+// ❌ WRONG - body has been parsed and re-serialized
+const payload = JSON.stringify(req.body);
+
+// ✅ CORRECT - use raw body
+const payload = req.rawBody;
+```
+
+### Timing-Safe Comparison
+
+<Warning>
+  Always use timing-safe comparison functions. Regular string comparison (`===`) is vulnerable to timing attacks.
+</Warning>
+
+```javascript
+// ❌ WRONG - vulnerable to timing attacks
+return signature === expectedSignature;
+
+// ✅ CORRECT - timing-safe comparison
+return crypto.timingSafeEqual(
+  Buffer.from(signature),
+  Buffer.from(expectedSignature)
+);
+```
+
+### Timestamp Validation
+
+Optionally check the `X-Webhook-Timestamp` header to prevent replay attacks:
+
+```javascript
+const timestamp = parseInt(req.headers['x-webhook-timestamp']);
+const now = Math.floor(Date.now() / 1000);
+
+// Reject requests older than 5 minutes
+if (Math.abs(now - timestamp) > 300) {
+  return res.status(401).send('Request too old');
+}
+```
+
+## Protecting Your Secret
+
+<AccordionGroup>
+  <Accordion title="Store securely" icon="vault">
+    Never hardcode the secret in your code. Use environment variables or a secrets manager.
+    
+    ```bash
+    export WEBHOOK_SECRET="whsec_abc123..."
+    ```
+  </Accordion>
+  
+  <Accordion title="Rotate if compromised" icon="rotate">
+    If you suspect the secret is compromised:
+    1. Delete the webhook
+    2. Create a new webhook (gets new secret)
+    3. Update your server with the new secret
+  </Accordion>
+  
+  <Accordion title="Use HTTPS" icon="lock">
+    Always use HTTPS for your webhook endpoint. This encrypts the payload in transit.
+  </Accordion>
+  
+  <Accordion title="Restrict access" icon="user-shield">
+    - Whitelist Jasni's IP addresses if possible
+    - Use a unique, random URL path
+    - Consider additional authentication headers
+  </Accordion>
+</AccordionGroup>
+
+## Testing Signatures
+
+Test your verification with this script:
+
+```javascript
+const crypto = require('crypto');
+
+const secret = 'whsec_test_secret';
+const payload = JSON.stringify({
+  event: 'email.received',
+  timestamp: new Date().toISOString(),
+  data: { id: '123', from: 'test@example.com' }
+});
+
+const signature = crypto
+  .createHmac('sha256', secret)
+  .update(payload)
+  .digest('hex');
+
+console.log('Payload:', payload);
+console.log('Signature:', signature);
+
+// Use these to test your verification endpoint
+```

@@ -1,0 +1,196 @@
+---
+title: "Labels"
+description: "Organize and categorize your emails with labels"
+---
+
+## Overview
+
+Labels in Jasni allow you to categorize and organize emails. Unlike folders, an email can have multiple labels, making it easy to classify emails by topic, priority, or any custom criteria.
+
+Labels are particularly useful for AI agents that need to classify and route incoming emails.
+
+## Label Structure
+
+A label object contains:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | uuid | Unique identifier |
+| `name` | string | Label name (1-50 characters) |
+| `color` | string | Hex color code (e.g., `#6366f1`) |
+| `description` | string | Optional description |
+| `created_at` | datetime | Creation timestamp |
+| `email_count` | integer | Number of emails (when requested) |
+
+## Creating Labels
+
+Create a new label with a name and optional color:
+
+```json
+POST /api/v1/labels
+{
+  "name": "Important",
+  "color": "#ef4444",
+  "description": "High priority emails"
+}
+```
+
+<Note>
+  If no color is provided, a random color from a predefined palette will be assigned.
+</Note>
+
+### Color Format
+
+Colors must be in hex format: `#RRGGBB`
+
+```json
+{
+  "name": "Urgent",
+  "color": "#dc2626"
+}
+```
+
+## Listing Labels
+
+Retrieve all labels for your account:
+
+```bash
+GET /api/v1/labels
+```
+
+To include email counts:
+
+```bash
+GET /api/v1/labels?include_count=true
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "labels": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "name": "Important",
+        "color": "#ef4444",
+        "description": "High priority emails",
+        "created_at": "2024-01-15T10:30:00Z",
+        "email_count": 42
+      },
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440001",
+        "name": "Follow Up",
+        "color": "#f59e0b",
+        "description": null,
+        "created_at": "2024-01-15T10:35:00Z",
+        "email_count": 15
+      }
+    ],
+    "total": 2
+  }
+}
+```
+
+## Use Cases
+
+### AI Email Classification
+
+Use labels to let your AI agent classify incoming emails:
+
+```javascript
+// Example: AI agent classifies incoming email
+async function classifyEmail(email) {
+  const classification = await aiModel.classify(email.text);
+  
+  // Apply appropriate label based on classification
+  const labelMap = {
+    'support': 'Support Request',
+    'sales': 'Sales Inquiry',
+    'urgent': 'Urgent',
+    'spam': 'Likely Spam'
+  };
+  
+  const labelName = labelMap[classification];
+  // Apply label to email via API
+}
+```
+
+### Priority Management
+
+Create a priority system with labels:
+
+```javascript
+const priorityLabels = [
+  { name: 'P1 - Critical', color: '#dc2626' },
+  { name: 'P2 - High', color: '#f97316' },
+  { name: 'P3 - Medium', color: '#eab308' },
+  { name: 'P4 - Low', color: '#22c55e' }
+];
+```
+
+### Department Routing
+
+Route emails to different teams:
+
+```javascript
+const departmentLabels = [
+  { name: 'Sales', color: '#3b82f6' },
+  { name: 'Support', color: '#8b5cf6' },
+  { name: 'Engineering', color: '#06b6d4' },
+  { name: 'Marketing', color: '#ec4899' }
+];
+```
+
+## Suggested Label Colors
+
+Here's a palette of colors that work well together:
+
+| Color | Hex | Use Case |
+|-------|-----|----------|
+| 🔴 Red | `#ef4444` | Urgent, Important |
+| 🟠 Orange | `#f97316` | High Priority |
+| 🟡 Yellow | `#eab308` | Needs Attention |
+| 🟢 Green | `#22c55e` | Resolved, Done |
+| 🔵 Blue | `#3b82f6` | Information |
+| 🟣 Purple | `#8b5cf6` | Personal |
+| 🩷 Pink | `#ec4899` | Marketing |
+| 🩵 Cyan | `#06b6d4` | Technical |
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use descriptive names" icon="tag">
+    Choose clear, descriptive label names that are easy to understand at a glance.
+  </Accordion>
+  
+  <Accordion title="Limit the number of labels" icon="list-ol">
+    Too many labels can be overwhelming. Aim for 10-20 well-organized labels.
+  </Accordion>
+  
+  <Accordion title="Use consistent colors" icon="palette">
+    Establish a color scheme (e.g., red for urgent, green for resolved) and stick to it.
+  </Accordion>
+  
+  <Accordion title="Combine with webhooks" icon="webhook">
+    Use webhooks to automatically apply labels when emails arrive based on rules or AI classification.
+  </Accordion>
+</AccordionGroup>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="List Labels API" icon="list" href="/api-reference/labels/list">
+    List labels endpoint reference
+  </Card>
+  <Card title="Create Label API" icon="plus" href="/api-reference/labels/create">
+    Create label endpoint reference
+  </Card>
+  <Card title="Emails" icon="envelope" href="/concepts/emails">
+    Learn about email operations
+  </Card>
+  <Card title="Webhooks" icon="webhook" href="/concepts/webhooks">
+    Automate label application
+  </Card>
+</CardGroup>

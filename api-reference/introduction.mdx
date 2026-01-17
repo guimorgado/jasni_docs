@@ -1,33 +1,194 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: "API Reference"
+description: "Complete reference for the Jasni AI REST API"
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+## Base URL
 
-## Welcome
+All API requests should be made to:
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
-
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+```
+https://api.jasni.ai/api/v1
+```
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+All endpoints require authentication via Bearer token. Include your API key in the `Authorization` header:
+
+```bash
+Authorization: Bearer jsk_your_api_key
+```
+
+<Card title="Get your API key" icon="key" href="/authentication">
+  Learn how to create and manage API keys
+</Card>
+
+## Request Format
+
+All POST, PUT, and PATCH requests should include:
+
+```
+Content-Type: application/json
+```
+
+Request bodies must be valid JSON.
+
+## Response Format
+
+All responses follow a consistent format:
+
+### Success Response
 
 ```json
-"security": [
-  {
-    "bearerAuth": []
+{
+  "success": true,
+  "data": {
+    // Response data here
   }
-]
+}
 ```
+
+### Error Response
+
+```json
+{
+  "success": false,
+  "error": "Description of what went wrong"
+}
+```
+
+## HTTP Status Codes
+
+| Code | Description |
+|------|-------------|
+| `200` | Success |
+| `201` | Created (for POST requests) |
+| `400` | Bad Request - Invalid parameters |
+| `401` | Unauthorized - Invalid or missing API key |
+| `403` | Forbidden - Insufficient permissions |
+| `404` | Not Found - Resource doesn't exist |
+| `409` | Conflict - Resource already exists |
+| `429` | Too Many Requests - Rate limit exceeded |
+| `500` | Internal Server Error |
+
+## Rate Limits
+
+API requests are rate limited to prevent abuse:
+
+| Plan | Requests/Minute |
+|------|----------------|
+| Free | 100 |
+| Pro | 1,000 |
+| Enterprise | Custom |
+
+When rate limited, you'll receive a `429` response. Implement exponential backoff to handle this gracefully.
+
+## Pagination
+
+List endpoints support pagination via query parameters:
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `limit` | Maximum items to return | 50 |
+
+```bash
+GET /api/v1/emails?account=you@domain.com&limit=20
+```
+
+## API Endpoints
+
+### Emails
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/emails` | [List emails](/api-reference/emails/list) |
+| GET | `/emails/{id}` | [Get email](/api-reference/emails/get) |
+| POST | `/emails/send` | [Send email](/api-reference/emails/send) |
+| POST | `/emails/{id}/reply` | [Reply to email](/api-reference/emails/reply) |
+| POST | `/emails/{id}/forward` | [Forward email](/api-reference/emails/forward) |
+| PATCH | `/emails/{id}` | [Update email](/api-reference/emails/update) |
+| DELETE | `/emails/{id}` | [Delete email](/api-reference/emails/delete) |
+
+### Labels
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/labels` | [List labels](/api-reference/labels/list) |
+| POST | `/labels` | [Create label](/api-reference/labels/create) |
+
+### Webhooks
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/webhooks` | [List webhooks](/api-reference/webhooks/list) |
+| POST | `/webhooks` | [Create webhook](/api-reference/webhooks/create) |
+| PATCH | `/webhooks` | [Update webhook](/api-reference/webhooks/update) |
+| DELETE | `/webhooks` | [Delete webhook](/api-reference/webhooks/delete) |
+
+## OpenAPI Specification
+
+<Card title="Download OpenAPI Spec" icon="file-code" href="/api-reference/openapi.json">
+  Get the full OpenAPI 3.1 specification
+</Card>
+
+The OpenAPI specification can be used to:
+- Generate client SDKs
+- Import into Postman or Insomnia
+- Set up API testing
+
+## SDKs
+
+<Note>
+  Official SDKs are coming soon! For now, use any HTTP client to interact with the API.
+</Note>
+
+### Example: JavaScript/TypeScript
+
+```typescript
+class JasniClient {
+  private apiKey: string;
+  private baseUrl = 'https://api.jasni.ai/api/v1';
+
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
+  }
+
+  private async request(path: string, options: RequestInit = {}) {
+    const response = await fetch(`${this.baseUrl}${path}`, {
+      ...options,
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
+    return response.json();
+  }
+
+  async listEmails(account: string, folder = 'INBOX', limit = 50) {
+    return this.request(`/emails?account=${account}&folder=${folder}&limit=${limit}`);
+  }
+
+  async sendEmail(data: { from: string; to: string[]; subject: string; text?: string; html?: string }) {
+    return this.request('/emails/send', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+}
+
+// Usage
+const jasni = new JasniClient('jsk_your_api_key');
+const emails = await jasni.listEmails('you@domain.com');
+```
+
+## Need Help?
+
+<CardGroup cols={2}>
+  <Card title="Support" icon="life-ring" href="mailto:support@jasni.ai">
+    Contact our support team
+  </Card>
+  <Card title="GitHub" icon="github" href="https://github.com/JasniCompany">
+    Report issues
+  </Card>
+</CardGroup>

@@ -1,0 +1,228 @@
+---
+title: "Forward Email"
+api: "POST /api/v1/emails/{id}/forward"
+description: "Forward an existing email to new recipients"
+---
+
+## Request
+
+<ParamField path="id" type="integer" required>
+  UID of the email to forward
+</ParamField>
+
+<ParamField query="account" type="string" required>
+  Email account to send from
+</ParamField>
+
+<ParamField query="folder" type="string" default="INBOX">
+  Folder where the original email is located
+</ParamField>
+
+### Body
+
+<ParamField body="to" type="string | string[]" required>
+  Recipient(s) to forward to
+</ParamField>
+
+<ParamField body="cc" type="string | string[]">
+  CC recipient(s)
+</ParamField>
+
+<ParamField body="bcc" type="string | string[]">
+  BCC recipient(s)
+</ParamField>
+
+<ParamField body="text" type="string">
+  Optional message to include before the forwarded content
+</ParamField>
+
+<ParamField body="html" type="string">
+  Optional HTML message
+</ParamField>
+
+<ParamField body="includeOriginal" type="boolean" default="true">
+  Whether to include the original email content
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the forward was sent successfully
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="properties">
+    <ResponseField name="messageId" type="string">
+      Message-ID of the forwarded email
+    </ResponseField>
+    <ResponseField name="from" type="string">
+      Sender address
+    </ResponseField>
+    <ResponseField name="to" type="array">
+      Recipients
+    </ResponseField>
+    <ResponseField name="cc" type="array">
+      CC recipients
+    </ResponseField>
+    <ResponseField name="subject" type="string">
+      Forward subject (with Fwd: prefix)
+    </ResponseField>
+    <ResponseField name="savedToSent" type="boolean">
+      Whether saved to Sent folder
+    </ResponseField>
+    <ResponseField name="forwardedFrom" type="object">
+      Original email metadata
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST "https://api.jasni.ai/api/v1/emails/12345/forward?account=you@domain.com" \
+  -H "Authorization: Bearer jsk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "colleague@example.com",
+    "text": "FYI - see the email below.",
+    "includeOriginal": true
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.jasni.ai/api/v1/emails/12345/forward?account=you@domain.com',
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer jsk_your_api_key',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      to: ['colleague@example.com', 'manager@example.com'],
+      cc: 'team@domain.com',
+      text: 'FYI - please review the message below.',
+      includeOriginal: true,
+    }),
+  }
+);
+
+const data = await response.json();
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.jasni.ai/api/v1/emails/12345/forward',
+    headers={
+        'Authorization': 'Bearer jsk_your_api_key',
+        'Content-Type': 'application/json',
+    },
+    params={'account': 'you@domain.com'},
+    json={
+        'to': ['colleague@example.com'],
+        'text': 'FYI - see below.',
+        'includeOriginal': True,
+    }
+)
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "data": {
+    "messageId": "<1705312800789@domain.com>",
+    "from": "you@domain.com",
+    "to": ["colleague@example.com"],
+    "subject": "Fwd: Project Update",
+    "savedToSent": true,
+    "forwardedFrom": {
+      "uid": 12345,
+      "from": "sender@example.com",
+      "subject": "Project Update",
+      "date": "2024-01-15T10:30:00Z"
+    }
+  }
+}
+```
+
+```json Success - Multiple recipients
+{
+  "success": true,
+  "data": {
+    "messageId": "<1705312800789@domain.com>",
+    "from": "you@domain.com",
+    "to": ["colleague@example.com", "manager@example.com"],
+    "cc": ["team@domain.com"],
+    "subject": "Fwd: Project Update",
+    "savedToSent": true,
+    "forwardedFrom": {
+      "uid": 12345,
+      "from": "sender@example.com",
+      "subject": "Project Update",
+      "date": "2024-01-15T10:30:00Z"
+    }
+  }
+}
+```
+
+```json Error - Invalid recipient
+{
+  "success": false,
+  "error": "Invalid recipient email: not-valid"
+}
+```
+</ResponseExample>
+
+## How It Works
+
+When you forward an email, Jasni:
+
+1. **Fetches the original email**: Retrieves the full content from the specified folder
+2. **Formats the forward**:
+   - Adds `Fwd:` prefix to the subject
+   - Includes forwarded message header with original sender, date, subject
+   - Wraps the original content
+3. **Adds your message**: Your `text` or `html` appears before the forwarded content
+4. **Sends to new recipients**: Delivers to the specified To/CC/BCC addresses
+5. **Saves to Sent**: Stores a copy in your Sent folder
+
+## Forward with Custom Message
+
+```javascript
+// Forward with a detailed HTML message
+const response = await fetch(
+  'https://api.jasni.ai/api/v1/emails/12345/forward?account=you@domain.com',
+  {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer jsk_your_api_key',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      to: ['team-lead@example.com'],
+      bcc: ['archive@domain.com'],
+      html: `
+        <p>Hi Team Lead,</p>
+        <p>Please review the customer inquiry below. I think we should:</p>
+        <ul>
+          <li>Schedule a call this week</li>
+          <li>Prepare a proposal</li>
+        </ul>
+        <p>Let me know your thoughts.</p>
+        <p>Thanks!</p>
+      `,
+      includeOriginal: true,
+    }),
+  }
+);
+```
+
+## Notes
+
+- The `to` parameter is required - you must specify at least one recipient
+- All recipient emails are validated before sending
+- The original email content is preserved including any formatting
+- `forwardedFrom` in the response contains metadata about the original email

@@ -1,0 +1,198 @@
+---
+title: "Emails"
+description: "Understanding email operations in Jasni"
+---
+
+## Overview
+
+Jasni provides a complete email management API that allows you to programmatically send, receive, read, reply to, and forward emails. All operations are performed through your connected email accounts.
+
+## Email Accounts
+
+Before you can work with emails, you need to connect at least one email account to Jasni. You can:
+
+- **Connect an existing account**: Use your existing email provider (Gmail, Outlook, custom IMAP)
+- **Create a new account**: Set up a new email address with your custom domain
+
+<Note>
+  Each email account is linked to your Jasni user. You can only access emails from accounts you own.
+</Note>
+
+## Email Structure
+
+An email object in Jasni contains the following fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `uid` | integer | Unique identifier within the mailbox |
+| `messageId` | string | RFC 2822 Message-ID header |
+| `from` | string | Sender email address |
+| `to` | string[] | Recipient email addresses |
+| `cc` | string[] | CC recipients |
+| `subject` | string | Email subject line |
+| `date` | datetime | When the email was sent/received |
+| `text` | string | Plain text body |
+| `html` | string | HTML body |
+| `attachments` | object[] | List of attachments |
+| `flags` | string[] | IMAP flags (e.g., `\Seen`, `\Flagged`) |
+
+## Operations
+
+### Listing Emails
+
+Fetch emails from any folder in your mailbox:
+
+```bash
+GET /api/v1/emails?account=you@domain.com&folder=INBOX&limit=50
+```
+
+Common folders:
+- `INBOX` - Incoming emails
+- `Sent` - Sent emails
+- `Drafts` - Draft emails
+- `Trash` - Deleted emails
+- `Spam` or `Junk` - Spam folder
+
+### Reading an Email
+
+Fetch a specific email by its UID:
+
+```bash
+GET /api/v1/emails/123?account=you@domain.com&folder=INBOX
+```
+
+### Sending Emails
+
+Send a new email from one of your accounts:
+
+```json
+POST /api/v1/emails/send
+{
+  "from": "you@domain.com",
+  "to": ["recipient@example.com"],
+  "subject": "Hello!",
+  "text": "Plain text content",
+  "html": "<p>HTML content</p>"
+}
+```
+
+<Tip>
+  Always provide both `text` and `html` versions for maximum compatibility across email clients.
+</Tip>
+
+### Replying to Emails
+
+Reply to an existing email with proper threading:
+
+```json
+POST /api/v1/emails/123/reply?account=you@domain.com
+{
+  "text": "Thanks for your message!",
+  "replyAll": false,
+  "includeOriginal": true
+}
+```
+
+Jasni automatically:
+- Sets the correct `In-Reply-To` and `References` headers
+- Determines the correct recipients
+- Adds `Re:` prefix to the subject
+- Quotes the original message (if `includeOriginal` is true)
+
+### Forwarding Emails
+
+Forward an email to new recipients:
+
+```json
+POST /api/v1/emails/123/forward?account=you@domain.com
+{
+  "to": ["colleague@example.com"],
+  "text": "FYI - see below"
+}
+```
+
+### Updating Email Status
+
+Mark emails as read or unread:
+
+```json
+PATCH /api/v1/emails/123?account=you@domain.com
+{
+  "action": "read"
+}
+```
+
+### Deleting Emails
+
+Move an email to trash:
+
+```bash
+DELETE /api/v1/emails/123?account=you@domain.com
+```
+
+## Threading
+
+Email threading is automatically handled by Jasni. When you reply to or forward an email, the proper headers are set:
+
+- **Message-ID**: Unique identifier for each email
+- **In-Reply-To**: References the parent email's Message-ID
+- **References**: Full chain of Message-IDs in the thread
+
+This ensures emails are grouped correctly in the recipient's email client.
+
+## Attachments
+
+When listing or reading emails, attachment metadata is included:
+
+```json
+{
+  "attachments": [
+    {
+      "filename": "document.pdf",
+      "contentType": "application/pdf",
+      "size": 102400
+    }
+  ]
+}
+```
+
+<Note>
+  Attachment download endpoints are available for fetching actual attachment content.
+</Note>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use appropriate rate limiting" icon="gauge">
+    Don't poll the inbox too frequently. Consider using webhooks for real-time notifications instead.
+  </Accordion>
+  
+  <Accordion title="Handle threading correctly" icon="layer-group">
+    When building conversation views, group emails by their References header to maintain proper threading.
+  </Accordion>
+  
+  <Accordion title="Validate email addresses" icon="check">
+    Always validate recipient email addresses before sending to avoid bounces.
+  </Accordion>
+  
+  <Accordion title="Use webhooks for incoming email" icon="webhook">
+    Instead of polling, set up a webhook for `email.received` events to get instant notifications.
+  </Accordion>
+</AccordionGroup>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Send Email API" icon="paper-plane" href="/api-reference/emails/send">
+    Send email endpoint reference
+  </Card>
+  <Card title="List Emails API" icon="list" href="/api-reference/emails/list">
+    List emails endpoint reference
+  </Card>
+  <Card title="Webhooks" icon="webhook" href="/concepts/webhooks">
+    Set up real-time notifications
+  </Card>
+  <Card title="Labels" icon="tags" href="/concepts/labels">
+    Organize emails with labels
+  </Card>
+</CardGroup>

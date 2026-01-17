@@ -1,0 +1,204 @@
+---
+title: "Create Webhook"
+api: "POST /api/v1/webhooks"
+description: "Create a new webhook endpoint to receive email events"
+---
+
+## Request Body
+
+<ParamField body="url" type="string" required>
+  Webhook endpoint URL (must be HTTP or HTTPS)
+</ParamField>
+
+<ParamField body="events" type="array" required>
+  Events to subscribe to. At least one event is required.
+  
+  Available events:
+  - `email.received` - New email received
+  - `email.sent` - Email sent successfully  
+  - `email.bounced` - Email bounced
+  - `email.spam` - Email marked as spam
+  - `email.deleted` - Email deleted
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional description for the webhook
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the webhook was created successfully
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="properties">
+    <ResponseField name="webhook" type="object">
+      <Expandable title="properties">
+        <ResponseField name="id" type="string">
+          Unique identifier (UUID)
+        </ResponseField>
+        <ResponseField name="url" type="string">
+          Webhook endpoint URL
+        </ResponseField>
+        <ResponseField name="events" type="array">
+          Subscribed events
+        </ResponseField>
+        <ResponseField name="active" type="boolean">
+          Whether enabled (always `true` on creation)
+        </ResponseField>
+        <ResponseField name="description" type="string">
+          Description
+        </ResponseField>
+        <ResponseField name="secret" type="string">
+          **Signing secret** - Save this! Only shown once.
+        </ResponseField>
+        <ResponseField name="created_at" type="string">
+          ISO 8601 creation timestamp
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.jasni.ai/api/v1/webhooks \
+  -H "Authorization: Bearer jsk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://your-server.com/webhooks/jasni",
+    "events": ["email.received", "email.sent"],
+    "description": "Production webhook"
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.jasni.ai/api/v1/webhooks', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer jsk_your_api_key',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    url: 'https://your-server.com/webhooks/jasni',
+    events: ['email.received', 'email.sent'],
+    description: 'Production webhook',
+  }),
+});
+
+const data = await response.json();
+
+// IMPORTANT: Save the secret!
+console.log('Webhook ID:', data.data.webhook.id);
+console.log('Secret:', data.data.webhook.secret);
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.jasni.ai/api/v1/webhooks',
+    headers={
+        'Authorization': 'Bearer jsk_your_api_key',
+        'Content-Type': 'application/json',
+    },
+    json={
+        'url': 'https://your-server.com/webhooks/jasni',
+        'events': ['email.received', 'email.sent'],
+        'description': 'Production webhook',
+    }
+)
+
+webhook = response.json()['data']['webhook']
+
+# IMPORTANT: Save the secret!
+print(f"Webhook ID: {webhook['id']}")
+print(f"Secret: {webhook['secret']}")  # Save this securely!
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "data": {
+    "webhook": {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "url": "https://your-server.com/webhooks/jasni",
+      "events": ["email.received", "email.sent"],
+      "active": true,
+      "description": "Production webhook",
+      "secret": "whsec_abc123def456ghi789...",
+      "created_at": "2024-01-15T10:30:00Z"
+    }
+  }
+}
+```
+
+```json Error - Missing URL
+{
+  "success": false,
+  "error": "URL is required"
+}
+```
+
+```json Error - Invalid URL
+{
+  "success": false,
+  "error": "URL must use HTTP or HTTPS"
+}
+```
+
+```json Error - No events
+{
+  "success": false,
+  "error": "At least one event is required"
+}
+```
+
+```json Error - Invalid events
+{
+  "success": false,
+  "error": "Invalid events: invalid.event. Valid: email.received, email.sent, email.bounced, email.spam, email.deleted"
+}
+```
+
+```json Error - Limit reached
+{
+  "success": false,
+  "error": "Maximum 10 webhooks allowed"
+}
+```
+</ResponseExample>
+
+<Warning>
+  **Save the `secret` immediately!** It's only returned when the webhook is created and cannot be retrieved later. You'll need it to verify webhook signatures.
+</Warning>
+
+## Limits
+
+- Maximum **10 webhooks** per user
+- URL must use HTTP or HTTPS protocol
+
+## Verifying Webhook Signatures
+
+Use the secret to verify that webhook requests are from Jasni:
+
+```javascript
+const crypto = require('crypto');
+
+function verifyWebhookSignature(payload, signature, secret) {
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(payload)
+    .digest('hex');
+  
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(expectedSignature)
+  );
+}
+```
+
+See the [Webhook Security](/webhooks/security) guide for more details.

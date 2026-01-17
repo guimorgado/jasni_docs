@@ -1,0 +1,167 @@
+---
+title: "Delete Email"
+api: "DELETE /api/v1/emails/{id}"
+description: "Delete a specific email by its UID"
+---
+
+## Request
+
+<ParamField path="id" type="integer" required>
+  Email UID to delete
+</ParamField>
+
+<ParamField query="account" type="string" required>
+  Email account the email belongs to
+</ParamField>
+
+<ParamField query="folder" type="string" default="INBOX">
+  Folder where the email is located
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the deletion was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE "https://api.jasni.ai/api/v1/emails/12345?account=you@domain.com&folder=INBOX" \
+  -H "Authorization: Bearer jsk_your_api_key"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.jasni.ai/api/v1/emails/12345?account=you@domain.com&folder=INBOX',
+  {
+    method: 'DELETE',
+    headers: {
+      'Authorization': 'Bearer jsk_your_api_key',
+    },
+  }
+);
+
+const data = await response.json();
+console.log(data.message); // "Email deleted successfully"
+```
+
+```python Python
+import requests
+
+response = requests.delete(
+    'https://api.jasni.ai/api/v1/emails/12345',
+    headers={'Authorization': 'Bearer jsk_your_api_key'},
+    params={
+        'account': 'you@domain.com',
+        'folder': 'INBOX'
+    }
+)
+
+print(response.json()['message'])  # "Email deleted successfully"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "message": "Email deleted successfully"
+}
+```
+
+```json Error - Invalid ID
+{
+  "success": false,
+  "error": "Invalid email ID. Must be a number."
+}
+```
+
+```json Error - Account not found
+{
+  "success": false,
+  "error": "Email account not found or not authorized"
+}
+```
+</ResponseExample>
+
+## Webhook Event
+
+When an email is deleted, an `email.deleted` webhook event is dispatched:
+
+```json
+{
+  "event": "email.deleted",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "data": {
+    "id": "12345",
+    "account": "you@domain.com"
+  }
+}
+```
+
+## Behavior
+
+<Warning>
+  Deleting an email is permanent and cannot be undone. The email is marked for deletion and expunged from the mailbox.
+</Warning>
+
+Depending on your email provider's configuration, deleted emails may:
+- Be moved to a Trash folder
+- Be permanently deleted immediately
+
+## Use Cases
+
+### Cleanup Automation
+
+Automatically delete processed emails:
+
+```javascript
+async function cleanupProcessedEmails(processedIds) {
+  for (const uid of processedIds) {
+    await fetch(
+      `https://api.jasni.ai/api/v1/emails/${uid}?account=you@domain.com`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Authorization': 'Bearer jsk_your_api_key',
+        },
+      }
+    );
+  }
+}
+```
+
+### Spam Removal
+
+Delete confirmed spam emails:
+
+```javascript
+async function deleteSpam(email) {
+  const isSpam = await spamDetector.check(email);
+  
+  if (isSpam.confidence > 0.95) {
+    await fetch(
+      `https://api.jasni.ai/api/v1/emails/${email.uid}?account=you@domain.com`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Authorization': 'Bearer jsk_your_api_key',
+        },
+      }
+    );
+    
+    console.log(`Deleted spam email: ${email.subject}`);
+  }
+}
+```
+
+## Notes
+
+- The `id` must be a valid integer representing the email's UID
+- The `account` parameter is required
+- Ensure you have the correct folder specified if the email is not in INBOX
+- Consider using the update endpoint to mark as read instead of deleting if you want to keep records

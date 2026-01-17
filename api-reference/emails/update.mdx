@@ -1,0 +1,183 @@
+---
+title: "Update Email"
+api: "PATCH /api/v1/emails/{id}"
+description: "Update email flags (mark as read/unread)"
+---
+
+## Request
+
+<ParamField path="id" type="integer" required>
+  Email UID to update
+</ParamField>
+
+<ParamField query="account" type="string" required>
+  Email account the email belongs to
+</ParamField>
+
+<ParamField query="folder" type="string" default="INBOX">
+  Folder where the email is located
+</ParamField>
+
+### Body
+
+<ParamField body="action" type="string" required>
+  Action to perform. Must be either `read` or `unread`.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the update was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message
+</ResponseField>
+
+<RequestExample>
+```bash cURL - Mark as read
+curl -X PATCH "https://api.jasni.ai/api/v1/emails/12345?account=you@domain.com" \
+  -H "Authorization: Bearer jsk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "read"
+  }'
+```
+
+```bash cURL - Mark as unread
+curl -X PATCH "https://api.jasni.ai/api/v1/emails/12345?account=you@domain.com" \
+  -H "Authorization: Bearer jsk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "unread"
+  }'
+```
+
+```javascript JavaScript
+// Mark email as read
+const response = await fetch(
+  'https://api.jasni.ai/api/v1/emails/12345?account=you@domain.com',
+  {
+    method: 'PATCH',
+    headers: {
+      'Authorization': 'Bearer jsk_your_api_key',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      action: 'read',
+    }),
+  }
+);
+
+const data = await response.json();
+console.log(data.message); // "Email marked as read"
+```
+
+```python Python
+import requests
+
+# Mark email as unread
+response = requests.patch(
+    'https://api.jasni.ai/api/v1/emails/12345',
+    headers={
+        'Authorization': 'Bearer jsk_your_api_key',
+        'Content-Type': 'application/json',
+    },
+    params={'account': 'you@domain.com'},
+    json={'action': 'unread'}
+)
+
+print(response.json()['message'])  # "Email marked as unread"
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success - Marked as read
+{
+  "success": true,
+  "message": "Email marked as read"
+}
+```
+
+```json Success - Marked as unread
+{
+  "success": true,
+  "message": "Email marked as unread"
+}
+```
+
+```json Error - Invalid action
+{
+  "success": false,
+  "error": "Invalid action. Use \"read\" or \"unread\""
+}
+```
+
+```json Error - Invalid ID
+{
+  "success": false,
+  "error": "Invalid email ID. Must be a number."
+}
+```
+</ResponseExample>
+
+## Actions
+
+| Action | Description | IMAP Flag |
+|--------|-------------|-----------|
+| `read` | Mark the email as read | Sets `\Seen` flag |
+| `unread` | Mark the email as unread | Removes `\Seen` flag |
+
+## Use Cases
+
+### Batch Processing
+
+Mark multiple emails as read after processing:
+
+```javascript
+async function processInbox(emails) {
+  for (const email of emails) {
+    // Process the email
+    await processEmail(email);
+    
+    // Mark as read
+    await fetch(
+      `https://api.jasni.ai/api/v1/emails/${email.uid}?account=you@domain.com`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Authorization': 'Bearer jsk_your_api_key',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'read' }),
+      }
+    );
+  }
+}
+```
+
+### AI Agent Workflow
+
+An AI agent might mark emails as unread if they need human review:
+
+```javascript
+async function handleEmail(email) {
+  const classification = await aiAgent.classify(email);
+  
+  if (classification.confidence < 0.8) {
+    // Low confidence - mark as unread for human review
+    await markAsUnread(email.uid);
+    await notifyHuman(email, classification);
+  } else {
+    // High confidence - process and mark as read
+    await aiAgent.respond(email);
+    await markAsRead(email.uid);
+  }
+}
+```
+
+## Notes
+
+- Only `read` and `unread` actions are currently supported
+- The operation modifies the IMAP `\Seen` flag on the email
+- Changes are immediately reflected in the mailbox

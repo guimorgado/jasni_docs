@@ -1,0 +1,285 @@
+---
+title: "Webhook Best Practices"
+description: "Recommendations for building reliable webhook integrations"
+---
+
+## Respond Quickly
+
+<Warning>
+  Webhook requests timeout after **30 seconds**. If your endpoint takes longer, the request will fail and trigger a retry.
+</Warning>
+
+Return a `200` response immediately, then process the event asynchronously:
+
+```javascript
+app.post('/webhooks/jasni', async (req, res) => {
+  // Verify signature first
+  if (!verifySignature(req)) {
+    return res.status(401).send('Invalid');
+  }
+  
+  // Acknowledge receipt immediately
+  res.status(200).send('OK');
+  
+  // Process asynchronously
+  processWebhookAsync(req.body).catch(console.error);
+});
+
+async function processWebhookAsync(event) {
+  // This runs after the response is sent
+  switch (event.event) {
+    case 'email.received':
+      await handleNewEmail(event.data);
+      break;
+    // ...
+  }
+}
+```
+
+## Handle Duplicates (Idempotency)
+
+The same event might be delivered multiple times (due to retries or network issues). Your handler should be idempotent:
+
+```javascript
+const processedEvents = new Set(); // In production, use Redis or database
+
+async function handleWebhook(event) {
+  const eventId = `${event.event}-${event.data.id}-${event.timestamp}`;
+  
+  // Check if already processed
+  if (processedEvents.has(eventId)) {
+    console.log('Duplicate event, skipping:', eventId);
+    return;
+  }
+  
+  // Mark as processed BEFORE processing
+  processedEvents.add(eventId);
+  
+  // Process the event
+  await processEvent(event);
+}
+```
+
+### Database Approach
+
+```javascript
+// Store processed events in database
+async function handleWebhook(event) {
+  const eventId = `${event.event}-${event.data.id}`;
+  
+  try {
+    // Try to insert - will fail if duplicate
+    await db.webhookEvents.insert({
+      id: eventId,
+      event: event.event,
+      processedAt: new Date(),
+    });
+  } catch (error) {
+    if (error.code === 'DUPLICATE_KEY') {
+      console.log('Already processed:', eventId);
+      return;
+    }
+    throw error;
+  }
+  
+  // Process the event
+  await processEvent(event);
+}
+```
+
+## Use a Queue
+
+For high-volume webhooks, use a message queue:
+
+```javascript
+import { Queue } from 'bullmq';
+
+const webhookQueue = new Queue('webhooks');
+
+app.post('/webhooks/jasni', async (req, res) => {
+  if (!verifySignature(req)) {
+    return res.status(401).send('Invalid');
+  }
+  
+  // Add to queue and respond immediately
+  await webhookQueue.add('process', req.body);
+  res.status(200).send('OK');
+});
+
+// Worker processes queue items
+const worker = new Worker('webhooks', async (job) => {
+  const event = job.data;
+  await processEvent(event);
+});
+```
+
+## Error Handling
+
+Handle errors gracefully without losing events:
+
+```javascript
+async function processWebhook(event) {
+  try {
+    await processEvent(event);
+  } catch (error) {
+    // Log the error
+    console.error('Webhook processing failed:', error);
+    
+    // Store for retry
+    await db.failedWebhooks.insert({
+      event,
+      error: error.message,
+      failedAt: new Date(),
+    });
+    
+    // Alert if critical
+    if (isCriticalEvent(event)) {
+      await alertOps('Webhook processing failed', { event, error });
+    }
+  }
+}
+```
+
+## Monitor Your Webhooks
+
+### Track Delivery Status
+
+```javascript
+async function handleWebhook(event) {
+  const startTime = Date.now();
+  
+  try {
+    await processEvent(event);
+    
+    // Log success
+    await metrics.record({
+      event: event.event,
+      status: 'success',
+      duration: Date.now() - startTime,
+    });
+  } catch (error) {
+    // Log failure
+    await metrics.record({
+      event: event.event,
+      status: 'error',
+      error: error.message,
+      duration: Date.now() - startTime,
+    });
+    throw error;
+  }
+}
+```
+
+### Set Up Alerts
+
+Monitor for:
+- High error rates
+- Slow processing times
+- Missing events (gaps in sequence)
+- Unusual event volumes
+
+## Endpoint Security
+
+### Use HTTPS
+
+Always use HTTPS in production to encrypt data in transit.
+
+### Unique URL Path
+
+Use a random, unique path for your webhook endpoint:
+
+```
+❌ /webhooks
+✅ /webhooks/jasni/a8f3b2c1d4e5
+```
+
+### IP Allowlisting
+
+If your infrastructure supports it, whitelist Jasni's IP addresses.
+
+### Additional Authentication
+
+Consider adding extra authentication:
+
+```javascript
+app.post('/webhooks/jasni', (req, res) => {
+  // Verify webhook signature
+  if (!verifySignature(req)) {
+    return res.status(401).send('Invalid signature');
+  }
+  
+  // Verify custom header (shared secret)
+  const customToken = req.headers['x-custom-auth'];
+  if (customToken !== process.env.CUSTOM_WEBHOOK_TOKEN) {
+    return res.status(401).send('Invalid token');
+  }
+  
+  // Process webhook...
+});
+```
+
+## Testing
+
+### Local Development
+
+Use a tunnel service like ngrok for local testing:
+
+```bash
+ngrok http 3000
+# Use the ngrok URL when creating the webhook
+```
+
+### Test Events
+
+Create a test endpoint to simulate events:
+
+```javascript
+// Development only!
+app.post('/test/webhook', (req, res) => {
+  const testEvent = {
+    event: 'email.received',
+    timestamp: new Date().toISOString(),
+    data: {
+      id: 'test-123',
+      from: 'test@example.com',
+      to: ['you@domain.com'],
+      subject: 'Test Email',
+      text: 'This is a test',
+    },
+  };
+  
+  // Call your webhook handler
+  handleWebhook(testEvent);
+  res.send('Test event sent');
+});
+```
+
+## Checklist
+
+<Check>
+  **Verify signatures** on every request
+</Check>
+
+<Check>
+  **Respond within 30 seconds** (process async if needed)
+</Check>
+
+<Check>
+  **Handle duplicates** with idempotency
+</Check>
+
+<Check>
+  **Use HTTPS** in production
+</Check>
+
+<Check>
+  **Log and monitor** webhook processing
+</Check>
+
+<Check>
+  **Handle errors** gracefully with retries
+</Check>
+
+<Check>
+  **Test thoroughly** before going live
+</Check>
