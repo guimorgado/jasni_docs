@@ -3,9 +3,9 @@
   "theme": "palm",
   "name": "Jasni AI",
   "colors": {
-    "primary": "#7C3AED",
-    "light": "#A78BFA",
-    "dark": "#5B21B6"
+    "primary": "#0ea5e9",
+    "light": "#38bdf8",
+    "dark": "#0284c7"
   },
   "favicon": "/favicon.svg",
   "navigation": {
@@ -74,7 +74,7 @@
         "tab": "Webhooks",
         "groups": [
           {
-            "group": "Webhook Events",
+            "group": "Webhook Guide",
             "pages": [
               "webhooks/overview",
               "webhooks/events",
@@ -84,21 +84,7 @@
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "API Status",
-          "href": "https://status.jasni.ai",
-          "icon": "signal"
-        },
-        {
-          "anchor": "GitHub",
-          "href": "https://github.com/JasniCompany",
-          "icon": "github"
-        }
-      ]
-    }
+    ]
   },
   "logo": {
     "light": "/logo/light.svg",
@@ -136,7 +122,6 @@
   "footer": {
     "socials": {
       "x": "https://x.com/jasniai",
-      "github": "https://github.com/JasniCompany",
       "linkedin": "https://linkedin.com/company/jasni"
     }
   }

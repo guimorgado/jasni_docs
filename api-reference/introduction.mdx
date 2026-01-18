@@ -13,7 +13,7 @@ https://api.jasni.ai/api/v1
 
 ## Authentication
 
-All endpoints require authentication via Bearer token. Include your API key in the `Authorization` header:
+Include your API key in the `Authorization` header:
 
 ```bash
 Authorization: Bearer jsk_your_api_key
@@ -25,30 +25,26 @@ Authorization: Bearer jsk_your_api_key
 
 ## Request Format
 
-All POST, PUT, and PATCH requests should include:
+For POST, PUT, and PATCH requests:
 
 ```
 Content-Type: application/json
 ```
 
-Request bodies must be valid JSON.
-
 ## Response Format
 
-All responses follow a consistent format:
-
-### Success Response
+### Success
 
 ```json
 {
   "success": true,
   "data": {
-    // Response data here
+    // Response data
   }
 }
 ```
 
-### Error Response
+### Error
 
 ```json
 {
@@ -62,18 +58,15 @@ All responses follow a consistent format:
 | Code | Description |
 |------|-------------|
 | `200` | Success |
-| `201` | Created (for POST requests) |
-| `400` | Bad Request - Invalid parameters |
-| `401` | Unauthorized - Invalid or missing API key |
-| `403` | Forbidden - Insufficient permissions |
-| `404` | Not Found - Resource doesn't exist |
-| `409` | Conflict - Resource already exists |
-| `429` | Too Many Requests - Rate limit exceeded |
-| `500` | Internal Server Error |
+| `201` | Created |
+| `400` | Bad Request |
+| `401` | Unauthorized |
+| `403` | Forbidden |
+| `404` | Not Found |
+| `429` | Rate Limit Exceeded |
+| `500` | Server Error |
 
 ## Rate Limits
-
-API requests are rate limited to prevent abuse:
 
 | Plan | Requests/Minute |
 |------|----------------|
@@ -81,21 +74,19 @@ API requests are rate limited to prevent abuse:
 | Pro | 1,000 |
 | Enterprise | Custom |
 
-When rate limited, you'll receive a `429` response. Implement exponential backoff to handle this gracefully.
+<Tip>
+  Implement exponential backoff to handle rate limits gracefully.
+</Tip>
 
 ## Pagination
 
-List endpoints support pagination via query parameters:
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `limit` | Maximum items to return | 50 |
+Use the `limit` parameter to control results:
 
 ```bash
 GET /api/v1/emails?account=you@domain.com&limit=20
 ```
 
-## API Endpoints
+## Endpoints
 
 ### Emails
 
@@ -128,67 +119,37 @@ GET /api/v1/emails?account=you@domain.com&limit=20
 ## OpenAPI Specification
 
 <Card title="Download OpenAPI Spec" icon="file-code" href="/api-reference/openapi.json">
-  Get the full OpenAPI 3.1 specification
+  Get the full OpenAPI 3.1 specification for SDK generation or API testing tools
 </Card>
 
-The OpenAPI specification can be used to:
-- Generate client SDKs
-- Import into Postman or Insomnia
-- Set up API testing
-
-## SDKs
-
-<Note>
-  Official SDKs are coming soon! For now, use any HTTP client to interact with the API.
-</Note>
-
-### Example: JavaScript/TypeScript
+## Quick Example
 
 ```typescript
-class JasniClient {
-  private apiKey: string;
-  private baseUrl = 'https://api.jasni.ai/api/v1';
+// Simple API client example
+const API_KEY = 'jsk_your_api_key';
+const BASE_URL = 'https://api.jasni.ai/api/v1';
 
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
-  }
+// Send an email
+const response = await fetch(`${BASE_URL}/emails/send`, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${API_KEY}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    from: 'you@domain.com',
+    to: 'recipient@example.com',
+    subject: 'Hello!',
+    text: 'Message content',
+  }),
+});
 
-  private async request(path: string, options: RequestInit = {}) {
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      ...options,
-      headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-    });
-    return response.json();
-  }
-
-  async listEmails(account: string, folder = 'INBOX', limit = 50) {
-    return this.request(`/emails?account=${account}&folder=${folder}&limit=${limit}`);
-  }
-
-  async sendEmail(data: { from: string; to: string[]; subject: string; text?: string; html?: string }) {
-    return this.request('/emails/send', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-}
-
-// Usage
-const jasni = new JasniClient('jsk_your_api_key');
-const emails = await jasni.listEmails('you@domain.com');
+const data = await response.json();
+console.log(data);
 ```
 
 ## Need Help?
 
-<CardGroup cols={2}>
-  <Card title="Support" icon="life-ring" href="mailto:support@jasni.ai">
-    Contact our support team
-  </Card>
-  <Card title="GitHub" icon="github" href="https://github.com/JasniCompany">
-    Report issues
-  </Card>
-</CardGroup>
+<Card title="Contact Support" icon="life-ring" href="mailto:support@jasni.ai">
+  Have questions? Our support team is here to help.
+</Card>
