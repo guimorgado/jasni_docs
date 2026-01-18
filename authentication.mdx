@@ -32,6 +32,18 @@ Authorization: Bearer jsk_your_api_key
 ### Example Request
 
 <Tabs>
+  <Tab title="TypeScript SDK">
+    ```typescript
+    import { Jasni } from 'jasni-sdk'
+
+    const jasni = new Jasni('jsk_your_api_key')
+
+    // The SDK handles authentication automatically
+    const { emails } = await jasni.emails.list({
+      account: 'you@yourdomain.com',
+    })
+    ```
+  </Tab>
   <Tab title="cURL">
     ```bash
     curl -X GET https://api.jasni.ai/api/v1/emails \
@@ -121,8 +133,10 @@ The API key doesn't have permission for the requested operation:
     export JASNI_API_KEY="jsk_your_api_key"
     ```
     
-    ```javascript
-    const apiKey = process.env.JASNI_API_KEY;
+    ```typescript
+    import { Jasni } from 'jasni-sdk'
+
+    const jasni = new Jasni(process.env.JASNI_API_KEY!)
     ```
   </Accordion>
   

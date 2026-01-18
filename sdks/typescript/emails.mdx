@@ -1,0 +1,309 @@
+---
+title: "Emails"
+description: "Send, receive, and manage emails with the Jasni TypeScript SDK"
+---
+
+The `emails` resource allows you to list, read, send, reply, forward, and manage emails.
+
+## List Emails
+
+Retrieve emails from a folder:
+
+```typescript
+const { emails, total, folder, account } = await jasni.emails.list({
+  account: 'me@mail.jasni.ai',
+  folder: 'INBOX',  // Optional: default is INBOX
+  limit: 50,        // Optional: default is 50, max 100
+})
+
+emails.forEach(email => {
+  console.log(`${email.from} - ${email.subject}`)
+})
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `account` | `string` | Yes | Email account to fetch from |
+| `folder` | `string` | No | Folder to fetch from. Default: `INBOX` |
+| `limit` | `number` | No | Number of emails to fetch. Default: 50, max: 100 |
+
+### Response
+
+```typescript
+interface EmailPreview {
+  uid: number
+  messageId: string
+  subject: string
+  from: EmailAddress | string
+  to: EmailAddress[] | string[]
+  date: string
+  seen: boolean
+  hasAttachments: boolean
+  snippet?: string
+}
+
+interface ListEmailsResponse {
+  emails: EmailPreview[]
+  folder: string
+  total: number
+  account: string
+}
+```
+
+## Get Email
+
+Retrieve a specific email by UID:
+
+```typescript
+const { email } = await jasni.emails.get(123, {
+  account: 'me@mail.jasni.ai',
+  folder: 'INBOX',  // Optional
+})
+
+console.log('Subject:', email.subject)
+console.log('From:', email.from)
+console.log('Body:', email.text || email.html)
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `account` | `string` | Yes | Email account |
+| `folder` | `string` | No | Folder. Default: `INBOX` |
+
+### Response
+
+The `Email` type extends `EmailPreview` with full content:
+
+```typescript
+interface Email extends EmailPreview {
+  text?: string
+  html?: string
+  cc?: EmailAddress[] | string[]
+  bcc?: EmailAddress[] | string[]
+  replyTo?: string
+  attachments?: EmailAttachment[]
+  inReplyTo?: string
+  references?: string
+}
+```
+
+## Send Email
+
+Send a new email:
+
+```typescript
+const result = await jasni.emails.send({
+  from: 'me@mail.jasni.ai',
+  to: ['recipient@example.com'],
+  subject: 'Hello!',
+  text: 'Plain text body',
+  html: '<p>HTML body</p>',  // Optional
+  cc: ['cc@example.com'],    // Optional
+  bcc: ['bcc@example.com'],  // Optional
+  replyTo: 'reply@example.com', // Optional
+})
+
+console.log('Message ID:', result.messageId)
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `from` | `string` | Yes | Sender email (must be an account you own) |
+| `to` | `string \| string[]` | Yes | Recipient email address(es) |
+| `subject` | `string` | Yes | Email subject |
+| `text` | `string` | No | Plain text body |
+| `html` | `string` | No | HTML body |
+| `cc` | `string \| string[]` | No | CC recipients |
+| `bcc` | `string \| string[]` | No | BCC recipients |
+| `replyTo` | `string` | No | Reply-to address |
+
+<Note>
+  You must provide at least `text` or `html` for the email body.
+</Note>
+
+### Response
+
+```typescript
+interface SendEmailResponse {
+  messageId: string
+  from: string
+  to: string[]
+  subject: string
+  savedToSent: boolean
+}
+```
+
+## Reply to Email
+
+Reply to an existing email:
+
+```typescript
+const reply = await jasni.emails.reply(123, {
+  account: 'me@mail.jasni.ai',
+  text: 'Thanks for your email!',
+  replyAll: false,         // Optional: default false
+  includeOriginal: true,   // Optional: default true
+})
+
+console.log('Reply sent:', reply.messageId)
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `account` | `string` | Yes | Email account |
+| `folder` | `string` | No | Folder of the original email. Default: `INBOX` |
+| `text` | `string` | No | Plain text reply body |
+| `html` | `string` | No | HTML reply body |
+| `replyAll` | `boolean` | No | Reply to all recipients. Default: `false` |
+| `includeOriginal` | `boolean` | No | Include original message. Default: `true` |
+
+### Response
+
+```typescript
+interface ReplyResponse {
+  messageId: string
+  from: string
+  to: string[]
+  cc?: string[]
+  subject: string
+  inReplyTo: string
+  references: string
+  savedToSent: boolean
+}
+```
+
+## Forward Email
+
+Forward an email to other recipients:
+
+```typescript
+const forward = await jasni.emails.forward(123, {
+  account: 'me@mail.jasni.ai',
+  to: ['forward@example.com'],
+  text: 'FYI - see below',  // Optional message
+  cc: ['cc@example.com'],   // Optional
+})
+
+console.log('Forwarded:', forward.messageId)
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `account` | `string` | Yes | Email account |
+| `folder` | `string` | No | Folder of the original email. Default: `INBOX` |
+| `to` | `string \| string[]` | Yes | Recipients to forward to |
+| `cc` | `string \| string[]` | No | CC recipients |
+| `bcc` | `string \| string[]` | No | BCC recipients |
+| `text` | `string` | No | Message to include before forwarded content |
+| `html` | `string` | No | HTML message |
+| `includeOriginal` | `boolean` | No | Include original message. Default: `true` |
+
+### Response
+
+```typescript
+interface ForwardResponse {
+  messageId: string
+  from: string
+  to: string[]
+  cc?: string[]
+  subject: string
+  savedToSent: boolean
+  forwardedFrom: {
+    uid: number
+    from: EmailAddress | string
+    subject: string
+    date: string
+  }
+}
+```
+
+## Delete Email
+
+Delete an email:
+
+```typescript
+await jasni.emails.delete(123, {
+  account: 'me@mail.jasni.ai',
+})
+```
+
+## Mark as Read/Unread
+
+Update the read status of an email:
+
+```typescript
+// Mark as read
+await jasni.emails.markAsRead(123, { account: 'me@mail.jasni.ai' })
+
+// Mark as unread
+await jasni.emails.markAsUnread(123, { account: 'me@mail.jasni.ai' })
+```
+
+## Email Labels
+
+The SDK also provides methods to manage labels on emails. See the [Labels](/sdks/typescript/labels) page for details on:
+
+- Getting labels for an email
+- Assigning labels to an email
+- Removing labels from an email
+
+## Example: Email Workflow
+
+Here's a complete example of an email workflow:
+
+```typescript
+import { Jasni } from 'jasni-sdk'
+
+const jasni = new Jasni('jsk_your_api_key')
+
+async function emailWorkflow() {
+  const account = 'me@mail.jasni.ai'
+  
+  // List recent emails
+  const { emails } = await jasni.emails.list({
+    account,
+    limit: 10,
+  })
+  
+  console.log(`Found ${emails.length} emails`)
+  
+  // Get the first unread email
+  const unread = emails.find(e => !e.seen)
+  if (unread) {
+    // Get full content
+    const { email } = await jasni.emails.get(unread.uid, { account })
+    console.log('Subject:', email.subject)
+    console.log('Body:', email.text)
+    
+    // Mark as read
+    await jasni.emails.markAsRead(unread.uid, { account })
+    
+    // Reply to it
+    await jasni.emails.reply(unread.uid, {
+      account,
+      text: 'Thank you for your email! I will get back to you soon.',
+    })
+  }
+  
+  // Send a new email
+  await jasni.emails.send({
+    from: account,
+    to: 'contact@example.com',
+    subject: 'Hello from SDK',
+    text: 'This is a test email sent from the Jasni TypeScript SDK.',
+    html: '<p>This is a test email sent from the <strong>Jasni TypeScript SDK</strong>.</p>',
+  })
+}
+
+emailWorkflow().catch(console.error)
+```

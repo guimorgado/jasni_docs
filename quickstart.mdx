@@ -14,6 +14,27 @@ You'll need:
 ## Send Your First Email
 
 <Tabs>
+  <Tab title="TypeScript SDK">
+    ```bash
+    npm install jasni-sdk
+    ```
+    
+    ```typescript
+    import { Jasni } from 'jasni-sdk'
+
+    const jasni = new Jasni('jsk_your_api_key')
+
+    const result = await jasni.emails.send({
+      from: 'you@yourdomain.com',
+      to: 'recipient@example.com',
+      subject: 'Hello from Jasni!',
+      text: 'This is my first email sent via Jasni API.',
+      html: '<h1>Hello!</h1><p>This is my first email sent via Jasni API.</p>'
+    })
+
+    console.log('Sent:', result.messageId)
+    ```
+  </Tab>
   <Tab title="cURL">
     ```bash
     curl -X POST https://api.jasni.ai/api/v1/emails/send \
@@ -97,6 +118,19 @@ You'll need:
 Fetch emails from your inbox:
 
 <Tabs>
+  <Tab title="TypeScript SDK">
+    ```typescript
+    const { emails } = await jasni.emails.list({
+      account: 'you@yourdomain.com',
+      folder: 'INBOX',
+      limit: 10,
+    })
+
+    emails.forEach(email => {
+      console.log(`From: ${email.from} - Subject: ${email.subject}`)
+    })
+    ```
+  </Tab>
   <Tab title="cURL">
     ```bash
     curl -X GET "https://api.jasni.ai/api/v1/emails?account=you@yourdomain.com&folder=INBOX&limit=10" \
@@ -146,6 +180,18 @@ Fetch emails from your inbox:
 Receive real-time notifications when new emails arrive:
 
 <Tabs>
+  <Tab title="TypeScript SDK">
+    ```typescript
+    const { webhook } = await jasni.webhooks.create({
+      url: 'https://your-server.com/webhook',
+      events: ['email.received', 'email.sent'],
+      description: 'My first webhook'
+    })
+
+    // Save the secret! It's only shown once
+    console.log('Webhook secret:', webhook.secret)
+    ```
+  </Tab>
   <Tab title="cURL">
     ```bash
     curl -X POST https://api.jasni.ai/api/v1/webhooks \
@@ -187,6 +233,9 @@ Receive real-time notifications when new emails arrive:
 ## Next Steps
 
 <CardGroup cols={2}>
+  <Card title="TypeScript SDK" icon="npm" href="/sdks/typescript/overview">
+    Use the official SDK
+  </Card>
   <Card title="API Reference" icon="code" href="/api-reference/introduction">
     Explore all endpoints
   </Card>
@@ -195,8 +244,5 @@ Receive real-time notifications when new emails arrive:
   </Card>
   <Card title="Emails" icon="/icons-svg/inbox.svg" href="/concepts/emails">
     Learn email operations
-  </Card>
-  <Card title="Labels" icon="/icons-svg/label.svg" href="/concepts/labels">
-    Organize with labels
   </Card>
 </CardGroup>

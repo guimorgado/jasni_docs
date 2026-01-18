@@ -32,6 +32,23 @@
         ]
       },
       {
+        "tab": "SDKs",
+        "groups": [
+          {
+            "group": "TypeScript SDK",
+            "pages": [
+              "sdks/typescript/overview",
+              "sdks/typescript/accounts",
+              "sdks/typescript/emails",
+              "sdks/typescript/drafts",
+              "sdks/typescript/labels",
+              "sdks/typescript/webhooks",
+              "sdks/typescript/errors"
+            ]
+          }
+        ]
+      },
+      {
         "tab": "API Reference",
         "groups": [
           {

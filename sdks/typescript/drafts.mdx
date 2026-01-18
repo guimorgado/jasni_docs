@@ -1,0 +1,204 @@
+---
+title: "Drafts"
+description: "Create and manage email drafts with the Jasni TypeScript SDK"
+---
+
+The `drafts` resource allows you to create, list, update, and delete email drafts.
+
+## List Drafts
+
+Retrieve all drafts for an account:
+
+```typescript
+const { drafts, total, account } = await jasni.drafts.list({
+  account: 'me@mail.jasni.ai',
+  limit: 50,  // Optional: default is 50
+})
+
+drafts.forEach(draft => {
+  console.log(`Draft: ${draft.subject || '(No subject)'}`)
+})
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `account` | `string` | Yes | Email account |
+| `limit` | `number` | No | Maximum number of drafts. Default: 50 |
+
+### Response
+
+```typescript
+interface Draft {
+  uid: number
+  messageId: string
+  subject: string
+  from: EmailAddress | string
+  to: EmailAddress[] | string[]
+  date: string
+  seen: boolean
+  hasAttachments: boolean
+  snippet?: string
+  text?: string
+  html?: string
+}
+
+interface ListDraftsResponse {
+  drafts: Draft[]
+  total: number
+  account: string
+}
+```
+
+## Create Draft
+
+Create a new draft:
+
+```typescript
+const { uid } = await jasni.drafts.create({
+  account: 'me@mail.jasni.ai',
+  to: 'recipient@example.com',
+  subject: 'Draft subject',
+  text: 'Draft body',
+  html: '<p>Draft body</p>',  // Optional
+  cc: ['cc@example.com'],      // Optional
+})
+
+console.log('Draft created with UID:', uid)
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `account` | `string` | Yes | Email account |
+| `to` | `string \| string[]` | No | Recipient email address(es) |
+| `subject` | `string` | No | Email subject |
+| `text` | `string` | No | Plain text body |
+| `html` | `string` | No | HTML body |
+| `cc` | `string \| string[]` | No | CC recipients |
+
+<Note>
+  All fields except `account` are optional when creating a draft. You can create an empty draft and update it later.
+</Note>
+
+### Response
+
+```typescript
+interface CreateDraftResponse {
+  uid: number
+  account: string
+  message: string
+}
+```
+
+## Update Draft
+
+Update an existing draft:
+
+```typescript
+await jasni.drafts.update({
+  account: 'me@mail.jasni.ai',
+  uid: 123,
+  subject: 'Updated subject',
+  text: 'Updated body',
+  to: ['new-recipient@example.com'],
+})
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `account` | `string` | Yes | Email account |
+| `uid` | `number` | Yes | UID of the draft to update |
+| `to` | `string \| string[]` | No | Recipient email address(es) |
+| `subject` | `string` | No | Email subject |
+| `text` | `string` | No | Plain text body |
+| `html` | `string` | No | HTML body |
+| `cc` | `string \| string[]` | No | CC recipients |
+
+### Response
+
+```typescript
+interface UpdateDraftResponse {
+  uid: number
+  account: string
+  message: string
+}
+```
+
+## Delete Draft
+
+Delete a draft:
+
+```typescript
+await jasni.drafts.delete({
+  account: 'me@mail.jasni.ai',
+  uid: 123,
+})
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `account` | `string` | Yes | Email account |
+| `uid` | `number` | Yes | UID of the draft to delete |
+
+## Example: Draft Workflow
+
+Here's a complete example of working with drafts:
+
+```typescript
+import { Jasni } from 'jasni-sdk'
+
+const jasni = new Jasni('jsk_your_api_key')
+
+async function draftWorkflow() {
+  const account = 'me@mail.jasni.ai'
+  
+  // Create a new draft
+  const { uid } = await jasni.drafts.create({
+    account,
+    to: 'recipient@example.com',
+    subject: 'Important message',
+    text: 'Hello, I wanted to discuss...',
+  })
+  console.log('Created draft:', uid)
+  
+  // List all drafts
+  const { drafts } = await jasni.drafts.list({ account })
+  console.log(`Total drafts: ${drafts.length}`)
+  
+  // Update the draft
+  await jasni.drafts.update({
+    account,
+    uid,
+    subject: 'Very important message',
+    text: 'Hello, I wanted to discuss something urgent...',
+  })
+  console.log('Updated draft')
+  
+  // Later, when ready to send, you can:
+  // 1. Get the draft content
+  // 2. Send it as an email
+  // 3. Delete the draft
+  
+  const draft = drafts.find(d => d.uid === uid)
+  if (draft) {
+    await jasni.emails.send({
+      from: account,
+      to: 'recipient@example.com',
+      subject: draft.subject,
+      text: draft.text,
+    })
+    
+    await jasni.drafts.delete({ account, uid })
+    console.log('Draft sent and deleted')
+  }
+}
+
+draftWorkflow().catch(console.error)
+```

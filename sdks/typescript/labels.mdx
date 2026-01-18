@@ -1,0 +1,300 @@
+---
+title: "Labels"
+description: "Organize emails with labels using the Jasni TypeScript SDK"
+---
+
+The SDK provides two ways to work with labels:
+- `jasni.labels` - Manage labels themselves (create, list)
+- `jasni.emails.labels` - Manage labels on specific emails (assign, remove, list)
+
+## List Labels
+
+Retrieve all labels:
+
+```typescript
+const { labels, total } = await jasni.labels.list({
+  includeCount: true,  // Optional: include email count per label
+})
+
+labels.forEach(label => {
+  console.log(`${label.name}: ${label.email_count || 0} emails`)
+})
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `includeCount` | `boolean` | No | Include email count per label. Default: `false` |
+
+### Response
+
+```typescript
+interface Label {
+  id: string
+  name: string
+  color: string
+  description?: string
+  created_at: string
+  email_count?: number
+}
+
+interface ListLabelsResponse {
+  labels: Label[]
+  total: number
+}
+```
+
+## Create Label
+
+Create a new label:
+
+```typescript
+const { label } = await jasni.labels.create({
+  name: 'Important',
+  color: '#ff0000',               // Optional: hex color
+  description: 'Important emails', // Optional
+})
+
+console.log('Created label:', label.id)
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | `string` | Yes | Label name |
+| `color` | `string` | No | Hex color (e.g., `#ff0000`). Auto-generated if not provided. |
+| `description` | `string` | No | Description |
+
+### Response
+
+```typescript
+interface CreateLabelResponse {
+  label: Label
+  message: string
+}
+```
+
+## Get Email Labels
+
+Get labels assigned to a specific email:
+
+```typescript
+const { labels, message_id, account } = await jasni.emails.labels.list(123, {
+  account: 'me@mail.jasni.ai',
+  folder: 'INBOX',  // Optional
+})
+
+labels.forEach(label => {
+  console.log(`- ${label.name} (applied by: ${label.applied_by})`)
+})
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `account` | `string` | Yes | Email account |
+| `folder` | `string` | No | Folder. Default: `INBOX` |
+
+### Response
+
+```typescript
+interface EmailLabel extends Label {
+  applied_by: string
+  applied_at: string
+  metadata?: Record<string, unknown>
+}
+
+interface GetEmailLabelsResponse {
+  labels: EmailLabel[]
+  message_id: string
+  account: string
+}
+```
+
+## Assign Labels to Email
+
+Assign labels to an email:
+
+```typescript
+// Using label names (creates if they don't exist)
+const result = await jasni.emails.labels.assign(123, {
+  account: 'me@mail.jasni.ai',
+  labels: ['Important', 'Work'],
+  agentName: 'my-agent',  // Optional: for tracking
+  metadata: { reason: 'Auto-categorized' },  // Optional
+})
+
+// Or using existing label IDs
+const result = await jasni.emails.labels.assign(123, {
+  account: 'me@mail.jasni.ai',
+  labelIds: ['label-id-1', 'label-id-2'],
+})
+
+console.log('Labels assigned:', result.labels.map(l => l.name))
+console.log('Created labels:', result.created_labels)
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `account` | `string` | Yes | Email account |
+| `folder` | `string` | No | Folder. Default: `INBOX` |
+| `labelIds` | `string[]` | No | Array of existing label IDs to assign |
+| `labels` | `string[]` | No | Array of label names (creates if not exists) |
+| `agentName` | `string` | No | Name of the agent applying labels |
+| `metadata` | `object` | No | Additional context about the categorization |
+
+<Note>
+  You must provide either `labelIds` or `labels` (or both). Using `labels` with names will automatically create any labels that don't exist.
+</Note>
+
+### Response
+
+```typescript
+interface AssignLabelsResponse {
+  labels: EmailLabel[]
+  created_labels: Pick<Label, 'id' | 'name' | 'color'>[]
+  message_id: string
+  account: string
+  message: string
+}
+```
+
+## Remove Labels from Email
+
+Remove labels from an email:
+
+```typescript
+const result = await jasni.emails.labels.remove(123, {
+  account: 'me@mail.jasni.ai',
+  labelIds: ['label-id-1', 'label-id-2'],
+})
+
+console.log(`Removed ${result.removed_count} labels`)
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `account` | `string` | Yes | Email account |
+| `folder` | `string` | No | Folder. Default: `INBOX` |
+| `labelIds` | `string[]` | Yes | Label IDs to remove |
+
+### Response
+
+```typescript
+interface RemoveLabelsResponse {
+  removed_count: number
+  message_id: string
+  message: string
+}
+```
+
+## Example: Label Workflow
+
+Here's a complete example of working with labels:
+
+```typescript
+import { Jasni } from 'jasni-sdk'
+
+const jasni = new Jasni('jsk_your_api_key')
+
+async function labelWorkflow() {
+  const account = 'me@mail.jasni.ai'
+  
+  // Create some labels
+  const { label: importantLabel } = await jasni.labels.create({
+    name: 'Important',
+    color: '#ff0000',
+    description: 'High priority emails',
+  })
+  
+  const { label: workLabel } = await jasni.labels.create({
+    name: 'Work',
+    color: '#0066cc',
+    description: 'Work-related emails',
+  })
+  
+  console.log('Created labels:', importantLabel.name, workLabel.name)
+  
+  // List all labels with counts
+  const { labels } = await jasni.labels.list({ includeCount: true })
+  console.log('All labels:', labels.map(l => `${l.name} (${l.email_count})`))
+  
+  // Get recent emails
+  const { emails } = await jasni.emails.list({ account, limit: 10 })
+  
+  // Apply labels to emails based on criteria
+  for (const email of emails) {
+    const labelsToAssign: string[] = []
+    
+    // Example: auto-categorize based on subject
+    if (email.subject.toLowerCase().includes('urgent')) {
+      labelsToAssign.push('Important')
+    }
+    
+    if (email.from.toString().includes('company.com')) {
+      labelsToAssign.push('Work')
+    }
+    
+    if (labelsToAssign.length > 0) {
+      await jasni.emails.labels.assign(email.uid, {
+        account,
+        labels: labelsToAssign,
+        agentName: 'auto-categorizer',
+        metadata: { 
+          rule: 'subject-keyword-match',
+          timestamp: new Date().toISOString(),
+        },
+      })
+      
+      console.log(`Labeled email "${email.subject}" with:`, labelsToAssign)
+    }
+  }
+  
+  // Get labels for a specific email
+  if (emails.length > 0) {
+    const { labels: emailLabels } = await jasni.emails.labels.list(emails[0].uid, { account })
+    console.log('Labels on first email:', emailLabels.map(l => l.name))
+  }
+}
+
+labelWorkflow().catch(console.error)
+```
+
+## AI-Powered Email Categorization
+
+Labels are particularly useful for AI-powered email categorization. Here's an example:
+
+```typescript
+import { Jasni } from 'jasni-sdk'
+
+const jasni = new Jasni('jsk_your_api_key')
+
+async function categorizeEmail(emailUid: number, account: string) {
+  // Get the email content
+  const { email } = await jasni.emails.get(emailUid, { account })
+  
+  // Use your AI to categorize (example with hypothetical AI service)
+  const categories = await analyzeEmailWithAI(email.subject, email.text)
+  
+  // Apply the categories as labels
+  if (categories.length > 0) {
+    await jasni.emails.labels.assign(emailUid, {
+      account,
+      labels: categories,
+      agentName: 'ai-categorizer',
+      metadata: {
+        model: 'gpt-4',
+        confidence: 0.95,
+        analyzed_at: new Date().toISOString(),
+      },
+    })
+  }
+}
+```

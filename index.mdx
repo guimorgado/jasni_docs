@@ -84,6 +84,9 @@ Get up and running with Jasni in minutes.
 ## Explore
 
 <CardGroup cols={2}>
+  <Card title="TypeScript SDK" icon="npm" href="/sdks/typescript/overview">
+    Official SDK with full type support
+  </Card>
   <Card title="API Reference" icon="code" href="/api-reference/introduction">
     Complete API documentation with examples
   </Card>
@@ -93,26 +96,41 @@ Get up and running with Jasni in minutes.
   <Card title="Authentication" icon="/icons-svg/keys.svg" href="/authentication">
     How to authenticate your API requests
   </Card>
-  <Card title="Core Concepts" icon="/icons-svg/docs.svg" href="/concepts/emails">
-    Deep dive into emails, labels, and webhooks
-  </Card>
 </CardGroup>
 
 ## Example
 
 Send an email with a single API call:
 
-```bash
-curl -X POST https://api.jasni.ai/api/v1/emails/send \
-  -H "Authorization: Bearer jsk_your_api_key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "from": "you@yourdomain.com",
-    "to": "recipient@example.com",
-    "subject": "Hello from Jasni!",
-    "text": "This is my first email sent via Jasni API."
-  }'
-```
+<Tabs>
+  <Tab title="TypeScript SDK">
+    ```typescript
+    import { Jasni } from 'jasni-sdk'
+
+    const jasni = new Jasni('jsk_your_api_key')
+
+    await jasni.emails.send({
+      from: 'you@yourdomain.com',
+      to: 'recipient@example.com',
+      subject: 'Hello from Jasni!',
+      text: 'This is my first email sent via Jasni API.',
+    })
+    ```
+  </Tab>
+  <Tab title="cURL">
+    ```bash
+    curl -X POST https://api.jasni.ai/api/v1/emails/send \
+      -H "Authorization: Bearer jsk_your_api_key" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "from": "you@yourdomain.com",
+        "to": "recipient@example.com",
+        "subject": "Hello from Jasni!",
+        "text": "This is my first email sent via Jasni API."
+      }'
+    ```
+  </Tab>
+</Tabs>
 
 ## Need Help?
 

@@ -1,0 +1,121 @@
+---
+title: "Accounts"
+description: "Manage email accounts with the Jasni TypeScript SDK"
+---
+
+The `accounts` resource allows you to create, list, and delete email accounts associated with your Jasni account.
+
+## List Accounts
+
+Retrieve all email accounts:
+
+```typescript
+const { accounts, total } = await jasni.accounts.list()
+
+console.log(`Found ${total} accounts:`)
+accounts.forEach(account => {
+  console.log(`- ${account.email} (${account.name})`)
+})
+```
+
+### Response
+
+```typescript
+interface Account {
+  id: string
+  email: string
+  name: string
+  created_at: string
+}
+
+interface ListAccountsResponse {
+  accounts: Account[]
+  total: number
+}
+```
+
+## Create Account
+
+Create a new email account:
+
+```typescript
+// Create with auto-generated username
+const { account } = await jasni.accounts.create({
+  name: 'My Account',
+})
+console.log('Created:', account.email)
+
+// Create with specific username
+const { account } = await jasni.accounts.create({
+  username: 'support',
+  name: 'Support Team',
+})
+// Result: support@mail.jasni.ai
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `username` | `string` | No | Local part of the email address. Auto-generated if not provided. |
+| `name` | `string` | No | Display name for the account |
+
+### Response
+
+```typescript
+interface CreateAccountResponse {
+  account: Account
+  message: string
+}
+```
+
+## Delete Account
+
+Delete an email account:
+
+```typescript
+const result = await jasni.accounts.delete('support@mail.jasni.ai')
+console.log(result.message) // "Account deleted successfully"
+```
+
+### Response
+
+```typescript
+interface DeleteAccountResponse {
+  deleted_email: string
+  message: string
+}
+```
+
+<Warning>
+  Deleting an account is permanent. All emails and data associated with the account will be lost.
+</Warning>
+
+## Example: Account Management
+
+Here's a complete example of managing accounts:
+
+```typescript
+import { Jasni } from 'jasni-sdk'
+
+const jasni = new Jasni('jsk_your_api_key')
+
+async function manageAccounts() {
+  // List existing accounts
+  const { accounts } = await jasni.accounts.list()
+  console.log('Current accounts:', accounts.map(a => a.email))
+  
+  // Create a new account
+  const { account: newAccount } = await jasni.accounts.create({
+    username: 'newsletter',
+    name: 'Newsletter',
+  })
+  console.log('Created:', newAccount.email)
+  
+  // Delete an account
+  await jasni.accounts.delete(newAccount.email)
+  console.log('Deleted:', newAccount.email)
+}
+
+manageAccounts().catch(console.error)
+```

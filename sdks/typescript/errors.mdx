@@ -1,0 +1,350 @@
+---
+title: "Error Handling"
+description: "Handle errors gracefully with the Jasni TypeScript SDK"
+---
+
+The SDK provides typed error classes to help you handle different error scenarios gracefully.
+
+## Error Classes
+
+All SDK errors extend the base `JasniError` class:
+
+```typescript
+import { 
+  JasniError,
+  AuthenticationError,
+  NotFoundError,
+  ValidationError,
+  RateLimitError,
+  ConflictError,
+  ServerError,
+} from 'jasni-sdk'
+```
+
+### JasniError (Base Class)
+
+The base class for all Jasni SDK errors:
+
+```typescript
+class JasniError extends Error {
+  public readonly status: number  // HTTP status code
+  public readonly code: string    // Error code
+}
+```
+
+### AuthenticationError
+
+Thrown when authentication fails (invalid or missing API key).
+
+- **HTTP Status:** 401
+- **Error Code:** `AUTHENTICATION_ERROR`
+
+```typescript
+try {
+  await jasni.emails.list({ account: 'me@mail.jasni.ai' })
+} catch (error) {
+  if (error instanceof AuthenticationError) {
+    console.error('Invalid API key. Please check your credentials.')
+  }
+}
+```
+
+### NotFoundError
+
+Thrown when the requested resource doesn't exist.
+
+- **HTTP Status:** 404
+- **Error Code:** `NOT_FOUND`
+
+```typescript
+try {
+  await jasni.emails.get(999999, { account: 'me@mail.jasni.ai' })
+} catch (error) {
+  if (error instanceof NotFoundError) {
+    console.error('Email not found')
+  }
+}
+```
+
+### ValidationError
+
+Thrown when request validation fails.
+
+- **HTTP Status:** 400
+- **Error Code:** `VALIDATION_ERROR`
+
+```typescript
+try {
+  await jasni.emails.send({
+    from: 'me@mail.jasni.ai',
+    to: 'invalid-email',  // Invalid email format
+    subject: 'Test',
+  })
+} catch (error) {
+  if (error instanceof ValidationError) {
+    console.error('Invalid request:', error.message)
+  }
+}
+```
+
+### RateLimitError
+
+Thrown when the rate limit is exceeded.
+
+- **HTTP Status:** 429
+- **Error Code:** `RATE_LIMIT_EXCEEDED`
+
+```typescript
+try {
+  await jasni.emails.list({ account: 'me@mail.jasni.ai' })
+} catch (error) {
+  if (error instanceof RateLimitError) {
+    console.error('Rate limit exceeded')
+    if (error.retryAfter) {
+      console.log(`Retry after ${error.retryAfter} seconds`)
+    }
+  }
+}
+```
+
+The `RateLimitError` includes an optional `retryAfter` property indicating when you can retry:
+
+```typescript
+class RateLimitError extends JasniError {
+  public readonly retryAfter?: number  // Seconds until rate limit resets
+}
+```
+
+### ConflictError
+
+Thrown when there's a conflict (e.g., resource already exists).
+
+- **HTTP Status:** 409
+- **Error Code:** `CONFLICT`
+
+```typescript
+try {
+  await jasni.accounts.create({ username: 'existing-user' })
+} catch (error) {
+  if (error instanceof ConflictError) {
+    console.error('Account already exists')
+  }
+}
+```
+
+### ServerError
+
+Thrown when the server encounters an internal error.
+
+- **HTTP Status:** 500, 502, 503, 504
+- **Error Code:** `SERVER_ERROR`
+
+```typescript
+try {
+  await jasni.emails.send({ /* ... */ })
+} catch (error) {
+  if (error instanceof ServerError) {
+    console.error('Server error. Please try again later.')
+  }
+}
+```
+
+## Error Handling Patterns
+
+### Basic Error Handling
+
+```typescript
+import { 
+  Jasni, 
+  JasniError, 
+  AuthenticationError, 
+  NotFoundError 
+} from 'jasni-sdk'
+
+const jasni = new Jasni('jsk_your_api_key')
+
+try {
+  const { email } = await jasni.emails.get(123, { account: 'me@mail.jasni.ai' })
+  console.log(email.subject)
+} catch (error) {
+  if (error instanceof AuthenticationError) {
+    console.error('Invalid API key')
+  } else if (error instanceof NotFoundError) {
+    console.error('Email not found')
+  } else if (error instanceof JasniError) {
+    console.error(`API error: ${error.message} (${error.status})`)
+  } else {
+    console.error('Unexpected error:', error)
+  }
+}
+```
+
+### Comprehensive Error Handler
+
+Create a reusable error handler:
+
+```typescript
+import { 
+  JasniError,
+  AuthenticationError,
+  NotFoundError,
+  ValidationError,
+  RateLimitError,
+  ConflictError,
+  ServerError,
+} from 'jasni-sdk'
+
+function handleJasniError(error: unknown): void {
+  if (!(error instanceof JasniError)) {
+    console.error('Unexpected error:', error)
+    return
+  }
+
+  switch (true) {
+    case error instanceof AuthenticationError:
+      console.error('Authentication failed. Check your API key.')
+      // Redirect to login or refresh token
+      break
+      
+    case error instanceof NotFoundError:
+      console.error('Resource not found:', error.message)
+      // Show 404 page or message
+      break
+      
+    case error instanceof ValidationError:
+      console.error('Invalid request:', error.message)
+      // Show validation errors to user
+      break
+      
+    case error instanceof RateLimitError:
+      const rateLimitError = error as RateLimitError
+      console.error('Rate limited. Retry after:', rateLimitError.retryAfter, 'seconds')
+      // Implement backoff strategy
+      break
+      
+    case error instanceof ConflictError:
+      console.error('Conflict:', error.message)
+      // Handle duplicate resource
+      break
+      
+    case error instanceof ServerError:
+      console.error('Server error. Please try again later.')
+      // Show generic error message
+      break
+      
+    default:
+      console.error(`API Error [${error.status}]: ${error.message}`)
+  }
+}
+
+// Usage
+try {
+  await jasni.emails.send({ /* ... */ })
+} catch (error) {
+  handleJasniError(error)
+}
+```
+
+### Retry with Exponential Backoff
+
+Handle rate limits and transient errors with retry logic:
+
+```typescript
+import { JasniError, RateLimitError, ServerError } from 'jasni-sdk'
+
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError: Error | undefined
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await operation()
+    } catch (error) {
+      lastError = error as Error
+      
+      // Don't retry on client errors (except rate limits)
+      if (error instanceof JasniError) {
+        if (error instanceof RateLimitError) {
+          const delay = error.retryAfter 
+            ? error.retryAfter * 1000 
+            : baseDelay * Math.pow(2, attempt)
+          console.log(`Rate limited. Retrying in ${delay}ms...`)
+          await sleep(delay)
+          continue
+        }
+        
+        if (error instanceof ServerError) {
+          const delay = baseDelay * Math.pow(2, attempt)
+          console.log(`Server error. Retrying in ${delay}ms...`)
+          await sleep(delay)
+          continue
+        }
+        
+        // Don't retry other errors
+        throw error
+      }
+      
+      throw error
+    }
+  }
+  
+  throw lastError
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+// Usage
+const { emails } = await withRetry(() => 
+  jasni.emails.list({ account: 'me@mail.jasni.ai' })
+)
+```
+
+### Async/Await with Error Boundaries
+
+For React applications:
+
+```typescript
+import { useEffect, useState } from 'react'
+import { Jasni, JasniError, NotFoundError } from 'jasni-sdk'
+
+function useEmail(uid: number, account: string) {
+  const [email, setEmail] = useState<Email | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  
+  useEffect(() => {
+    const jasni = new Jasni(process.env.JASNI_API_KEY!)
+    
+    jasni.emails.get(uid, { account })
+      .then(({ email }) => setEmail(email))
+      .catch((err) => {
+        if (err instanceof NotFoundError) {
+          setError('Email not found')
+        } else if (err instanceof JasniError) {
+          setError(err.message)
+        } else {
+          setError('An unexpected error occurred')
+        }
+      })
+      .finally(() => setLoading(false))
+  }, [uid, account])
+  
+  return { email, error, loading }
+}
+```
+
+## Error Codes Reference
+
+| Error Class | HTTP Status | Error Code | Description |
+|-------------|-------------|------------|-------------|
+| `ValidationError` | 400 | `VALIDATION_ERROR` | Invalid request parameters |
+| `AuthenticationError` | 401 | `AUTHENTICATION_ERROR` | Invalid or missing API key |
+| `NotFoundError` | 404 | `NOT_FOUND` | Resource doesn't exist |
+| `ConflictError` | 409 | `CONFLICT` | Resource already exists |
+| `RateLimitError` | 429 | `RATE_LIMIT_EXCEEDED` | Too many requests |
+| `ServerError` | 500-504 | `SERVER_ERROR` | Internal server error |
