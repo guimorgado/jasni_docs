@@ -163,15 +163,15 @@ When listing or reading emails, attachment metadata is included:
 ## Best Practices
 
 <AccordionGroup>
-  <Accordion title="Use appropriate rate limiting" icon="gauge">
+  <Accordion title="Use appropriate rate limiting" icon="clock">
     Don't poll the inbox too frequently. Consider using webhooks for real-time notifications instead.
   </Accordion>
   
-  <Accordion title="Handle threading correctly" icon="layer-group">
+  <Accordion title="Handle threading correctly" icon="messages">
     When building conversation views, group emails by their References header to maintain proper threading.
   </Accordion>
   
-  <Accordion title="Validate email addresses" icon="check">
+  <Accordion title="Validate email addresses" icon="circle-check">
     Always validate recipient email addresses before sending to avoid bounces.
   </Accordion>
   
@@ -186,13 +186,13 @@ When listing or reading emails, attachment metadata is included:
   <Card title="Send Email" icon="paper-plane" href="/api-reference/emails/send">
     Send email endpoint
   </Card>
-  <Card title="List Emails" icon="list" href="/api-reference/emails/list">
+  <Card title="List Emails" icon="inbox" href="/api-reference/emails/list">
     List emails endpoint
   </Card>
   <Card title="Webhooks" icon="webhook" href="/concepts/webhooks">
     Real-time notifications
   </Card>
-  <Card title="Labels" icon="tags" href="/concepts/labels">
+  <Card title="Labels" icon="tag" href="/concepts/labels">
     Organize emails
   </Card>
 </CardGroup>

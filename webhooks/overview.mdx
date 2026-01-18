@@ -123,7 +123,7 @@ app.post('/webhooks/jasni', express.raw({ type: 'application/json' }), (req, res
 | `email.spam` | Email marked as spam |
 | `email.deleted` | Email was deleted |
 
-<Card title="Event Reference" icon="list" href="/webhooks/events">
+<Card title="Event Reference" icon="bolt" href="/webhooks/events">
   See detailed payload schemas for each event
 </Card>
 
@@ -185,7 +185,7 @@ After 3 failed retries, the delivery is marked as failed.
     Your endpoint should be idempotent. The same event might be delivered multiple times.
   </Accordion>
   
-  <Accordion title="Verify signatures" icon="shield-check">
+  <Accordion title="Verify signatures" icon="shield">
     Always verify the `X-Webhook-Signature` header to ensure requests are from Jasni.
   </Accordion>
   
@@ -197,7 +197,7 @@ After 3 failed retries, the delivery is marked as failed.
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Events" icon="bolt" href="/webhooks/events">
+  <Card title="Events" icon="list" href="/webhooks/events">
     Payload schemas
   </Card>
   <Card title="Security" icon="shield" href="/webhooks/security">
@@ -206,7 +206,7 @@ After 3 failed retries, the delivery is marked as failed.
   <Card title="Best Practices" icon="lightbulb" href="/webhooks/best-practices">
     Production tips
   </Card>
-  <Card title="Create Webhook" icon="code" href="/api-reference/webhooks/create">
+  <Card title="Create Webhook" icon="plus" href="/api-reference/webhooks/create">
     API endpoint
   </Card>
 </CardGroup>

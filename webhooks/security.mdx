@@ -239,7 +239,7 @@ if (Math.abs(now - timestamp) > 300) {
 ## Protecting Your Secret
 
 <AccordionGroup>
-  <Accordion title="Store securely" icon="vault">
+  <Accordion title="Store securely" icon="key">
     Never hardcode the secret in your code. Use environment variables or a secrets manager.
     
     ```bash
@@ -247,7 +247,7 @@ if (Math.abs(now - timestamp) > 300) {
     ```
   </Accordion>
   
-  <Accordion title="Rotate if compromised" icon="rotate">
+  <Accordion title="Rotate if compromised" icon="refresh">
     If you suspect the secret is compromised:
     1. Delete the webhook
     2. Create a new webhook (gets new secret)
@@ -258,7 +258,7 @@ if (Math.abs(now - timestamp) > 300) {
     Always use HTTPS for your webhook endpoint. This encrypts the payload in transit.
   </Accordion>
   
-  <Accordion title="Restrict access" icon="user-shield">
+  <Accordion title="Restrict access" icon="shield">
     - Whitelist Jasni's IP addresses if possible
     - Use a unique, random URL path
     - Consider additional authentication headers
