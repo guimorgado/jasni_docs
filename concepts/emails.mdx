@@ -163,19 +163,19 @@ When listing or reading emails, attachment metadata is included:
 ## Best Practices
 
 <AccordionGroup>
-  <Accordion title="Use appropriate rate limiting" icon="clock">
+  <Accordion title="Use appropriate rate limiting" icon="/icons-svg/refresh.svg">
     Don't poll the inbox too frequently. Consider using webhooks for real-time notifications instead.
   </Accordion>
   
-  <Accordion title="Handle threading correctly" icon="messages">
+  <Accordion title="Handle threading correctly" icon="/icons-svg/message.svg">
     When building conversation views, group emails by their References header to maintain proper threading.
   </Accordion>
   
-  <Accordion title="Validate email addresses" icon="circle-check">
+  <Accordion title="Validate email addresses" icon="/icons-svg/check.svg">
     Always validate recipient email addresses before sending to avoid bounces.
   </Accordion>
   
-  <Accordion title="Use webhooks for incoming email" icon="webhook">
+  <Accordion title="Use webhooks for incoming email" icon="/icons-svg/webhook.svg">
     Instead of polling, set up a webhook for `email.received` events to get instant notifications.
   </Accordion>
 </AccordionGroup>
@@ -183,16 +183,16 @@ When listing or reading emails, attachment metadata is included:
 ## Related
 
 <CardGroup cols={2}>
-  <Card title="Send Email" icon="paper-plane" href="/api-reference/emails/send">
+  <Card title="Send Email" icon="/icons-svg/send.svg" href="/api-reference/emails/send">
     Send email endpoint
   </Card>
-  <Card title="List Emails" icon="inbox" href="/api-reference/emails/list">
+  <Card title="List Emails" icon="/icons-svg/inbox.svg" href="/api-reference/emails/list">
     List emails endpoint
   </Card>
-  <Card title="Webhooks" icon="webhook" href="/concepts/webhooks">
+  <Card title="Webhooks" icon="/icons-svg/webhook.svg" href="/concepts/webhooks">
     Real-time notifications
   </Card>
-  <Card title="Labels" icon="tag" href="/concepts/labels">
+  <Card title="Labels" icon="/icons-svg/label.svg" href="/concepts/labels">
     Organize emails
   </Card>
 </CardGroup>

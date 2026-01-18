@@ -8,16 +8,16 @@ description: "Receive real-time notifications for email events"
 Webhooks are HTTP callbacks that notify your application when events occur in Jasni. Instead of polling the API to check for new emails, webhooks push data to your server in real-time.
 
 <CardGroup cols={2}>
-  <Card title="Real-time" icon="bolt">
+  <Card title="Real-time" icon="/icons-svg/refresh.svg">
     Get notified instantly when events happen
   </Card>
-  <Card title="Efficient" icon="gauge">
+  <Card title="Efficient" icon="/icons-svg/check.svg">
     No need to poll the API repeatedly
   </Card>
-  <Card title="Secure" icon="lock">
+  <Card title="Secure" icon="/icons-svg/keys.svg">
     Signed payloads prevent tampering
   </Card>
-  <Card title="Reliable" icon="rotate">
+  <Card title="Reliable" icon="/icons-svg/webhook.svg">
     Automatic retries on failure
   </Card>
 </CardGroup>
@@ -123,7 +123,7 @@ app.post('/webhooks/jasni', express.raw({ type: 'application/json' }), (req, res
 | `email.spam` | Email marked as spam |
 | `email.deleted` | Email was deleted |
 
-<Card title="Event Reference" icon="bolt" href="/webhooks/events">
+<Card title="Event Reference" icon="/icons-svg/info.svg" href="/webhooks/events">
   See detailed payload schemas for each event
 </Card>
 
@@ -177,19 +177,19 @@ After 3 failed retries, the delivery is marked as failed.
 ## Best Practices
 
 <AccordionGroup>
-  <Accordion title="Respond quickly" icon="clock">
+  <Accordion title="Respond quickly" icon="/icons-svg/refresh.svg">
     Return a `200` response immediately, then process the event asynchronously. Webhooks timeout after 30 seconds.
   </Accordion>
   
-  <Accordion title="Handle duplicates" icon="copy">
+  <Accordion title="Handle duplicates" icon="/icons-svg/copy.svg">
     Your endpoint should be idempotent. The same event might be delivered multiple times.
   </Accordion>
   
-  <Accordion title="Verify signatures" icon="shield">
+  <Accordion title="Verify signatures" icon="/icons-svg/keys.svg">
     Always verify the `X-Webhook-Signature` header to ensure requests are from Jasni.
   </Accordion>
   
-  <Accordion title="Use HTTPS" icon="lock">
+  <Accordion title="Use HTTPS" icon="/icons-svg/world.svg">
     Always use HTTPS endpoints in production to protect webhook data in transit.
   </Accordion>
 </AccordionGroup>
@@ -197,16 +197,16 @@ After 3 failed retries, the delivery is marked as failed.
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Events" icon="list" href="/webhooks/events">
+  <Card title="Events" icon="/icons-svg/info.svg" href="/webhooks/events">
     Payload schemas
   </Card>
-  <Card title="Security" icon="shield" href="/webhooks/security">
+  <Card title="Security" icon="/icons-svg/keys.svg" href="/webhooks/security">
     Verify signatures
   </Card>
-  <Card title="Best Practices" icon="lightbulb" href="/webhooks/best-practices">
+  <Card title="Best Practices" icon="/icons-svg/check.svg" href="/webhooks/best-practices">
     Production tips
   </Card>
-  <Card title="Create Webhook" icon="plus" href="/api-reference/webhooks/create">
+  <Card title="Create Webhook" icon="/icons-svg/plus.svg" href="/api-reference/webhooks/create">
     API endpoint
   </Card>
 </CardGroup>
