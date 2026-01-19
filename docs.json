@@ -45,6 +45,18 @@
               "sdks/typescript/webhooks",
               "sdks/typescript/errors"
             ]
+          },
+          {
+            "group": "Python SDK",
+            "pages": [
+              "sdks/python/overview",
+              "sdks/python/accounts",
+              "sdks/python/emails",
+              "sdks/python/drafts",
+              "sdks/python/labels",
+              "sdks/python/webhooks",
+              "sdks/python/errors"
+            ]
           }
         ]
       },

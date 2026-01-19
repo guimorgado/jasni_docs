@@ -1,0 +1,240 @@
+---
+title: "Drafts"
+description: "Create and manage email drafts with the Jasni Python SDK"
+---
+
+The `drafts` resource allows you to create, list, update, and delete email drafts.
+
+## List Drafts
+
+Retrieve all drafts for an account:
+
+```python
+result = jasni.drafts.list(
+    account="me@mail.jasni.ai",
+    limit=50,  # Optional: default is 50
+)
+
+for draft in result.drafts:
+    print(f"Draft: {draft.subject or '(No subject)'}")
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `account` | `str` | Yes | Email account |
+| `limit` | `int` | No | Maximum number of drafts. Default: 50 |
+
+### Response
+
+```python
+@dataclass
+class Draft:
+    uid: int
+    message_id: str
+    subject: str
+    from_: Union[EmailAddress, str]
+    to: List[Union[EmailAddress, str]]
+    date: str
+    seen: bool
+    has_attachments: bool
+    snippet: Optional[str] = None
+    text: Optional[str] = None
+    html: Optional[str] = None
+
+@dataclass
+class ListDraftsResponse:
+    drafts: List[Draft]
+    total: int
+    account: str
+```
+
+## Create Draft
+
+Create a new draft:
+
+```python
+result = jasni.drafts.create(
+    account="me@mail.jasni.ai",
+    to="recipient@example.com",
+    subject="Draft subject",
+    text="Draft body",
+    html="<p>Draft body</p>",    # Optional
+    cc=["cc@example.com"],        # Optional
+)
+
+print(f"Draft created with UID: {result.uid}")
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `account` | `str` | Yes | Email account |
+| `to` | `str \| List[str]` | No | Recipient email address(es) |
+| `subject` | `str` | No | Email subject |
+| `text` | `str` | No | Plain text body |
+| `html` | `str` | No | HTML body |
+| `cc` | `str \| List[str]` | No | CC recipients |
+
+<Note>
+  All fields except `account` are optional when creating a draft. You can create an empty draft and update it later.
+</Note>
+
+### Response
+
+```python
+@dataclass
+class CreateDraftResponse:
+    uid: int
+    account: str
+    message: str
+```
+
+## Update Draft
+
+Update an existing draft:
+
+```python
+jasni.drafts.update(
+    account="me@mail.jasni.ai",
+    uid=123,
+    subject="Updated subject",
+    text="Updated body",
+    to=["new-recipient@example.com"],
+)
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `account` | `str` | Yes | Email account |
+| `uid` | `int` | Yes | UID of the draft to update |
+| `to` | `str \| List[str]` | No | Recipient email address(es) |
+| `subject` | `str` | No | Email subject |
+| `text` | `str` | No | Plain text body |
+| `html` | `str` | No | HTML body |
+| `cc` | `str \| List[str]` | No | CC recipients |
+
+### Response
+
+```python
+@dataclass
+class UpdateDraftResponse:
+    uid: int
+    account: str
+    message: str
+```
+
+## Delete Draft
+
+Delete a draft:
+
+```python
+jasni.drafts.delete(account="me@mail.jasni.ai", uid=123)
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `account` | `str` | Yes | Email account |
+| `uid` | `int` | Yes | UID of the draft to delete |
+
+## Example: Draft Workflow
+
+Here's a complete example of working with drafts:
+
+```python
+from jasni import Jasni
+
+jasni = Jasni("jsk_your_api_key")
+
+def draft_workflow():
+    account = "me@mail.jasni.ai"
+    
+    # Create a new draft
+    result = jasni.drafts.create(
+        account=account,
+        to="recipient@example.com",
+        subject="Important message",
+        text="Hello, I wanted to discuss...",
+    )
+    uid = result.uid
+    print(f"Created draft: {uid}")
+    
+    # List all drafts
+    drafts_result = jasni.drafts.list(account=account)
+    print(f"Total drafts: {len(drafts_result.drafts)}")
+    
+    # Update the draft
+    jasni.drafts.update(
+        account=account,
+        uid=uid,
+        subject="Very important message",
+        text="Hello, I wanted to discuss something urgent...",
+    )
+    print("Updated draft")
+    
+    # Later, when ready to send, you can:
+    # 1. Get the draft content from the list
+    # 2. Send it as an email
+    # 3. Delete the draft
+    
+    draft = next((d for d in drafts_result.drafts if d.uid == uid), None)
+    if draft:
+        jasni.emails.send(
+            from_=account,
+            to="recipient@example.com",
+            subject=draft.subject,
+            text=draft.text,
+        )
+        
+        jasni.drafts.delete(account=account, uid=uid)
+        print("Draft sent and deleted")
+
+draft_workflow()
+```
+
+## Async Example
+
+```python
+import asyncio
+from jasni import AsyncJasni
+
+async def draft_workflow_async():
+    jasni = AsyncJasni("jsk_your_api_key")
+    account = "me@mail.jasni.ai"
+    
+    # Create a new draft
+    result = await jasni.drafts.create(
+        account=account,
+        to="recipient@example.com",
+        subject="Important message",
+        text="Hello, I wanted to discuss...",
+    )
+    print(f"Created draft: {result.uid}")
+    
+    # List all drafts
+    drafts_result = await jasni.drafts.list(account=account)
+    print(f"Total drafts: {len(drafts_result.drafts)}")
+    
+    # Update the draft
+    await jasni.drafts.update(
+        account=account,
+        uid=result.uid,
+        subject="Very important message",
+        text="Hello, I wanted to discuss something urgent...",
+    )
+    print("Updated draft")
+    
+    # Delete the draft
+    await jasni.drafts.delete(account=account, uid=result.uid)
+    print("Draft deleted")
+    
+    await jasni.close()
+
+asyncio.run(draft_workflow_async())
+```

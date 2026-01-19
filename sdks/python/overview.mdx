@@ -1,0 +1,146 @@
+---
+title: "Python SDK"
+description: "Official Python SDK for the Jasni Email API"
+---
+
+## Installation
+
+Install the SDK using pip:
+
+```bash
+pip install jasni
+```
+
+## Quick Start
+
+```python
+from jasni import Jasni
+
+# Initialize the client with your API key
+jasni = Jasni("jsk_your_api_key")
+
+# List your email accounts
+accounts = jasni.accounts.list()
+print(f"You have {accounts.total} accounts")
+
+# Send an email
+result = jasni.emails.send(
+    from_="me@mail.jasni.ai",
+    to="recipient@example.com",
+    subject="Hello from Jasni!",
+    text="This email was sent using the Jasni Python SDK.",
+)
+print(f"Email sent with ID: {result.message_id}")
+```
+
+## Async Support
+
+The SDK also supports async operations with `AsyncJasni`:
+
+```python
+import asyncio
+from jasni import AsyncJasni
+
+async def main():
+    jasni = AsyncJasni("jsk_your_api_key")
+    
+    # List emails
+    emails = await jasni.emails.list(account="me@mail.jasni.ai")
+    for email in emails.emails:
+        print(f"- {email.subject}")
+    
+    await jasni.close()
+
+asyncio.run(main())
+```
+
+## Configuration
+
+The SDK accepts optional configuration parameters:
+
+```python
+jasni = Jasni(
+    "jsk_your_api_key",
+    base_url="https://api.jasni.ai",  # Optional: custom base URL
+    timeout=30.0,                      # Optional: request timeout in seconds
+)
+```
+
+### Configuration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `api_key` | `str` | Required | Your Jasni API key (starts with `jsk_`) |
+| `base_url` | `str` | `https://api.jasni.ai` | API base URL |
+| `timeout` | `float` | `30.0` | Request timeout in seconds |
+
+## Available Resources
+
+The Jasni client provides access to the following resources:
+
+<CardGroup cols={2}>
+  <Card title="Accounts" icon="user" href="/sdks/python/accounts">
+    Create and manage email accounts
+  </Card>
+  <Card title="Emails" icon="envelope" href="/sdks/python/emails">
+    Send, receive, and manage emails
+  </Card>
+  <Card title="Drafts" icon="file-pen" href="/sdks/python/drafts">
+    Create and manage email drafts
+  </Card>
+  <Card title="Labels" icon="tag" href="/sdks/python/labels">
+    Organize emails with labels
+  </Card>
+  <Card title="Webhooks" icon="bolt" href="/sdks/python/webhooks">
+    Set up real-time notifications
+  </Card>
+</CardGroup>
+
+## Type Hints
+
+The SDK is fully typed with Python type hints and includes a `py.typed` marker for static type checkers:
+
+```python
+from jasni import Jasni
+from jasni.types import (
+    Email,
+    Account,
+    Label,
+    Webhook,
+    SendEmailResponse,
+    ListEmailsResponse,
+    Draft,
+    EmailPreview,
+)
+```
+
+## Context Manager Support
+
+The SDK supports context managers for automatic resource cleanup:
+
+```python
+# Synchronous
+with Jasni("jsk_your_api_key") as jasni:
+    emails = jasni.emails.list(account="me@mail.jasni.ai")
+
+# Asynchronous
+async with AsyncJasni("jsk_your_api_key") as jasni:
+    emails = await jasni.emails.list(account="me@mail.jasni.ai")
+```
+
+## Requirements
+
+- Python 3.8+
+- httpx
+- pydantic
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Accounts" icon="user" href="/sdks/python/accounts">
+    Learn how to manage accounts
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/sdks/python/errors">
+    Handle errors gracefully
+  </Card>
+</CardGroup>

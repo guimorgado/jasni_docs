@@ -1,0 +1,340 @@
+---
+title: "Labels"
+description: "Organize emails with labels using the Jasni Python SDK"
+---
+
+The SDK provides two ways to work with labels:
+- `jasni.labels` - Manage labels themselves (create, list)
+- `jasni.emails.labels` - Manage labels on specific emails (assign, remove, list)
+
+## List Labels
+
+Retrieve all labels:
+
+```python
+result = jasni.labels.list(include_count=True)  # Optional: include email count
+
+for label in result.labels:
+    print(f"{label.name}: {label.email_count or 0} emails")
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `include_count` | `bool` | No | Include email count per label. Default: `False` |
+
+### Response
+
+```python
+@dataclass
+class Label:
+    id: str
+    name: str
+    color: str
+    description: Optional[str] = None
+    created_at: str
+    email_count: Optional[int] = None
+
+@dataclass
+class ListLabelsResponse:
+    labels: List[Label]
+    total: int
+```
+
+## Create Label
+
+Create a new label:
+
+```python
+result = jasni.labels.create(
+    name="Important",
+    color="#ff0000",                # Optional: hex color
+    description="Important emails",  # Optional
+)
+
+print(f"Created label: {result.label.id}")
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `name` | `str` | Yes | Label name |
+| `color` | `str` | No | Hex color (e.g., `#ff0000`). Auto-generated if not provided. |
+| `description` | `str` | No | Description |
+
+### Response
+
+```python
+@dataclass
+class CreateLabelResponse:
+    label: Label
+    message: str
+```
+
+## Get Email Labels
+
+Get labels assigned to a specific email:
+
+```python
+result = jasni.emails.labels.list(
+    uid=123,
+    account="me@mail.jasni.ai",
+    folder="INBOX",  # Optional
+)
+
+for label in result.labels:
+    print(f"- {label.name} (applied by: {label.applied_by})")
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uid` | `int \| str` | Yes | Email UID (number) or message_id (string) |
+| `account` | `str` | Yes | Email account |
+| `folder` | `str` | No | Folder. Default: `INBOX` |
+
+### Response
+
+```python
+@dataclass
+class EmailLabel(Label):
+    applied_by: str
+    applied_at: str
+    metadata: Optional[Dict[str, Any]] = None
+
+@dataclass
+class GetEmailLabelsResponse:
+    labels: List[EmailLabel]
+    message_id: str
+    account: str
+```
+
+## Assign Labels to Email
+
+Assign labels to an email:
+
+```python
+# Using label names (creates if they don't exist)
+result = jasni.emails.labels.assign(
+    uid=123,
+    account="me@mail.jasni.ai",
+    labels=["Important", "Work"],
+    agent_name="my-agent",  # Optional: for tracking
+    metadata={"reason": "Auto-categorized"},  # Optional
+)
+
+# Or using existing label IDs
+result = jasni.emails.labels.assign(
+    uid=123,
+    account="me@mail.jasni.ai",
+    label_ids=["label-id-1", "label-id-2"],
+)
+
+print(f"Labels assigned: {[l.name for l in result.labels]}")
+print(f"Created labels: {result.created_labels}")
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uid` | `int \| str` | Yes | Email UID (number) or message_id (string) |
+| `account` | `str` | Yes | Email account |
+| `folder` | `str` | No | Folder. Default: `INBOX` |
+| `label_ids` | `List[str]` | No | Array of existing label IDs to assign |
+| `labels` | `List[str]` | No | Array of label names (creates if not exists) |
+| `agent_name` | `str` | No | Name of the agent applying labels |
+| `metadata` | `Dict[str, Any]` | No | Additional context about the categorization |
+
+<Note>
+  You must provide either `label_ids` or `labels` (or both). Using `labels` with names will automatically create any labels that don't exist.
+</Note>
+
+### Response
+
+```python
+@dataclass
+class AssignLabelsResponse:
+    labels: List[EmailLabel]
+    created_labels: List[Label]
+    message_id: str
+    account: str
+    message: str
+```
+
+## Remove Labels from Email
+
+Remove labels from an email:
+
+```python
+result = jasni.emails.labels.remove(
+    uid=123,
+    account="me@mail.jasni.ai",
+    label_ids=["label-id-1", "label-id-2"],
+)
+
+print(f"Removed {result.removed_count} labels")
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `uid` | `int \| str` | Yes | Email UID (number) or message_id (string) |
+| `account` | `str` | Yes | Email account |
+| `folder` | `str` | No | Folder. Default: `INBOX` |
+| `label_ids` | `List[str]` | Yes | Label IDs to remove |
+
+### Response
+
+```python
+@dataclass
+class RemoveLabelsResponse:
+    removed_count: int
+    message_id: str
+    message: str
+```
+
+## Example: Label Workflow
+
+Here's a complete example of working with labels:
+
+```python
+from jasni import Jasni
+
+jasni = Jasni("jsk_your_api_key")
+
+def label_workflow():
+    account = "me@mail.jasni.ai"
+    
+    # Create some labels
+    important_result = jasni.labels.create(
+        name="Important",
+        color="#ff0000",
+        description="High priority emails",
+    )
+    
+    work_result = jasni.labels.create(
+        name="Work",
+        color="#0066cc",
+        description="Work-related emails",
+    )
+    
+    print(f"Created labels: {important_result.label.name}, {work_result.label.name}")
+    
+    # List all labels with counts
+    labels_result = jasni.labels.list(include_count=True)
+    print("All labels:", [f"{l.name} ({l.email_count})" for l in labels_result.labels])
+    
+    # Get recent emails
+    emails_result = jasni.emails.list(account=account, limit=10)
+    
+    # Apply labels to emails based on criteria
+    for email in emails_result.emails:
+        labels_to_assign = []
+        
+        # Example: auto-categorize based on subject
+        if "urgent" in email.subject.lower():
+            labels_to_assign.append("Important")
+        
+        if "company.com" in str(email.from_):
+            labels_to_assign.append("Work")
+        
+        if labels_to_assign:
+            jasni.emails.labels.assign(
+                uid=email.uid,
+                account=account,
+                labels=labels_to_assign,
+                agent_name="auto-categorizer",
+                metadata={
+                    "rule": "subject-keyword-match",
+                    "timestamp": "2024-01-15T10:00:00Z",
+                },
+            )
+            
+            print(f'Labeled email "{email.subject}" with: {labels_to_assign}')
+    
+    # Get labels for a specific email
+    if emails_result.emails:
+        email_labels = jasni.emails.labels.list(
+            uid=emails_result.emails[0].uid,
+            account=account,
+        )
+        print("Labels on first email:", [l.name for l in email_labels.labels])
+
+label_workflow()
+```
+
+## AI-Powered Email Categorization
+
+Labels are particularly useful for AI-powered email categorization. Here's an example:
+
+```python
+from jasni import Jasni
+
+jasni = Jasni("jsk_your_api_key")
+
+def categorize_email(email_uid: int, account: str):
+    # Get the email content
+    result = jasni.emails.get(uid=email_uid, account=account)
+    email = result.email
+    
+    # Use your AI to categorize (example with hypothetical AI service)
+    categories = analyze_email_with_ai(email.subject, email.text)
+    
+    # Apply the categories as labels
+    if categories:
+        jasni.emails.labels.assign(
+            uid=email_uid,
+            account=account,
+            labels=categories,
+            agent_name="ai-categorizer",
+            metadata={
+                "model": "gpt-4",
+                "confidence": 0.95,
+                "analyzed_at": "2024-01-15T10:00:00Z",
+            },
+        )
+
+def analyze_email_with_ai(subject: str, text: str) -> list:
+    # Implement your AI categorization logic here
+    # This is a placeholder
+    return ["Category1", "Category2"]
+```
+
+## Async Example
+
+```python
+import asyncio
+from jasni import AsyncJasni
+
+async def label_workflow_async():
+    jasni = AsyncJasni("jsk_your_api_key")
+    account = "me@mail.jasni.ai"
+    
+    # Create a label
+    result = await jasni.labels.create(
+        name="Async Label",
+        color="#00ff00",
+    )
+    print(f"Created label: {result.label.name}")
+    
+    # List all labels
+    labels_result = await jasni.labels.list(include_count=True)
+    print(f"Total labels: {labels_result.total}")
+    
+    # Assign label to an email
+    await jasni.emails.labels.assign(
+        uid=123,
+        account=account,
+        labels=["Async Label"],
+    )
+    print("Label assigned")
+    
+    await jasni.close()
+
+asyncio.run(label_workflow_async())
+```

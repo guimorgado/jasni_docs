@@ -1,0 +1,432 @@
+---
+title: "Error Handling"
+description: "Handle errors gracefully with the Jasni Python SDK"
+---
+
+The SDK provides typed exception classes to help you handle different error scenarios gracefully.
+
+## Exception Classes
+
+All SDK exceptions extend the base `JasniError` class:
+
+```python
+from jasni.errors import (
+    JasniError,
+    AuthenticationError,
+    NotFoundError,
+    ValidationError,
+    RateLimitError,
+    ConflictError,
+    ServerError,
+)
+```
+
+### JasniError (Base Class)
+
+The base class for all Jasni SDK exceptions:
+
+```python
+class JasniError(Exception):
+    status: int   # HTTP status code
+    code: str     # Error code
+    message: str  # Error message
+```
+
+### AuthenticationError
+
+Raised when authentication fails (invalid or missing API key).
+
+- **HTTP Status:** 401
+- **Error Code:** `AUTHENTICATION_ERROR`
+
+```python
+try:
+    jasni.emails.list(account="me@mail.jasni.ai")
+except AuthenticationError:
+    print("Invalid API key. Please check your credentials.")
+```
+
+### NotFoundError
+
+Raised when the requested resource doesn't exist.
+
+- **HTTP Status:** 404
+- **Error Code:** `NOT_FOUND`
+
+```python
+try:
+    jasni.emails.get(uid=999999, account="me@mail.jasni.ai")
+except NotFoundError:
+    print("Email not found")
+```
+
+### ValidationError
+
+Raised when request validation fails.
+
+- **HTTP Status:** 400
+- **Error Code:** `VALIDATION_ERROR`
+
+```python
+try:
+    jasni.emails.send(
+        from_="me@mail.jasni.ai",
+        to="invalid-email",  # Invalid email format
+        subject="Test",
+    )
+except ValidationError as e:
+    print(f"Invalid request: {e}")
+```
+
+### RateLimitError
+
+Raised when the rate limit is exceeded.
+
+- **HTTP Status:** 429
+- **Error Code:** `RATE_LIMIT_EXCEEDED`
+
+```python
+try:
+    jasni.emails.list(account="me@mail.jasni.ai")
+except RateLimitError as e:
+    print("Rate limit exceeded")
+    if e.retry_after:
+        print(f"Retry after {e.retry_after} seconds")
+```
+
+The `RateLimitError` includes an optional `retry_after` property indicating when you can retry:
+
+```python
+class RateLimitError(JasniError):
+    retry_after: Optional[int]  # Seconds until rate limit resets
+```
+
+### ConflictError
+
+Raised when there's a conflict (e.g., resource already exists).
+
+- **HTTP Status:** 409
+- **Error Code:** `CONFLICT`
+
+```python
+try:
+    jasni.accounts.create(username="existing-user")
+except ConflictError:
+    print("Account already exists")
+```
+
+### ServerError
+
+Raised when the server encounters an internal error.
+
+- **HTTP Status:** 500, 502, 503, 504
+- **Error Code:** `SERVER_ERROR`
+
+```python
+try:
+    jasni.emails.send(...)
+except ServerError:
+    print("Server error. Please try again later.")
+```
+
+## Error Handling Patterns
+
+### Basic Error Handling
+
+```python
+from jasni import Jasni
+from jasni.errors import (
+    JasniError,
+    AuthenticationError,
+    NotFoundError,
+)
+
+jasni = Jasni("jsk_your_api_key")
+
+try:
+    result = jasni.emails.get(uid=123, account="me@mail.jasni.ai")
+    print(result.email.subject)
+except AuthenticationError:
+    print("Invalid API key")
+except NotFoundError:
+    print("Email not found")
+except JasniError as e:
+    print(f"API error: {e.message} ({e.status})")
+except Exception as e:
+    print(f"Unexpected error: {e}")
+```
+
+### Comprehensive Error Handler
+
+Create a reusable error handler:
+
+```python
+from jasni.errors import (
+    JasniError,
+    AuthenticationError,
+    NotFoundError,
+    ValidationError,
+    RateLimitError,
+    ConflictError,
+    ServerError,
+)
+
+def handle_jasni_error(error: Exception) -> None:
+    if not isinstance(error, JasniError):
+        print(f"Unexpected error: {error}")
+        return
+
+    if isinstance(error, AuthenticationError):
+        print("Authentication failed. Check your API key.")
+        # Redirect to login or refresh token
+        
+    elif isinstance(error, NotFoundError):
+        print(f"Resource not found: {error.message}")
+        # Show 404 page or message
+        
+    elif isinstance(error, ValidationError):
+        print(f"Invalid request: {error.message}")
+        # Show validation errors to user
+        
+    elif isinstance(error, RateLimitError):
+        print(f"Rate limited. Retry after: {error.retry_after} seconds")
+        # Implement backoff strategy
+        
+    elif isinstance(error, ConflictError):
+        print(f"Conflict: {error.message}")
+        # Handle duplicate resource
+        
+    elif isinstance(error, ServerError):
+        print("Server error. Please try again later.")
+        # Show generic error message
+        
+    else:
+        print(f"API Error [{error.status}]: {error.message}")
+
+# Usage
+try:
+    jasni.emails.send(...)
+except Exception as e:
+    handle_jasni_error(e)
+```
+
+### Retry with Exponential Backoff
+
+Handle rate limits and transient errors with retry logic:
+
+```python
+import time
+from jasni.errors import JasniError, RateLimitError, ServerError
+
+def with_retry(
+    operation,
+    max_retries: int = 3,
+    base_delay: float = 1.0
+):
+    """Execute operation with exponential backoff retry."""
+    last_error = None
+    
+    for attempt in range(max_retries):
+        try:
+            return operation()
+        except RateLimitError as e:
+            last_error = e
+            delay = e.retry_after if e.retry_after else base_delay * (2 ** attempt)
+            print(f"Rate limited. Retrying in {delay}s...")
+            time.sleep(delay)
+        except ServerError as e:
+            last_error = e
+            delay = base_delay * (2 ** attempt)
+            print(f"Server error. Retrying in {delay}s...")
+            time.sleep(delay)
+        except JasniError:
+            # Don't retry other errors
+            raise
+    
+    raise last_error
+
+# Usage
+result = with_retry(
+    lambda: jasni.emails.list(account="me@mail.jasni.ai")
+)
+```
+
+### Async Retry with Exponential Backoff
+
+```python
+import asyncio
+from jasni import AsyncJasni
+from jasni.errors import JasniError, RateLimitError, ServerError
+
+async def with_retry_async(
+    operation,
+    max_retries: int = 3,
+    base_delay: float = 1.0
+):
+    """Execute async operation with exponential backoff retry."""
+    last_error = None
+    
+    for attempt in range(max_retries):
+        try:
+            return await operation()
+        except RateLimitError as e:
+            last_error = e
+            delay = e.retry_after if e.retry_after else base_delay * (2 ** attempt)
+            print(f"Rate limited. Retrying in {delay}s...")
+            await asyncio.sleep(delay)
+        except ServerError as e:
+            last_error = e
+            delay = base_delay * (2 ** attempt)
+            print(f"Server error. Retrying in {delay}s...")
+            await asyncio.sleep(delay)
+        except JasniError:
+            raise
+    
+    raise last_error
+
+# Usage
+async def main():
+    jasni = AsyncJasni("jsk_your_api_key")
+    
+    result = await with_retry_async(
+        lambda: jasni.emails.list(account="me@mail.jasni.ai")
+    )
+    
+    await jasni.close()
+```
+
+### Context Manager with Error Handling
+
+```python
+from contextlib import contextmanager
+from jasni import Jasni
+from jasni.errors import JasniError, AuthenticationError
+
+@contextmanager
+def jasni_client(api_key: str):
+    """Context manager with automatic error handling."""
+    jasni = Jasni(api_key)
+    try:
+        yield jasni
+    except AuthenticationError:
+        print("Invalid API key")
+        raise
+    except JasniError as e:
+        print(f"Jasni API error: {e.message}")
+        raise
+    finally:
+        jasni.close()
+
+# Usage
+with jasni_client("jsk_your_api_key") as jasni:
+    result = jasni.emails.list(account="me@mail.jasni.ai")
+    print(f"Found {result.total} emails")
+```
+
+## Error Codes Reference
+
+| Exception Class | HTTP Status | Error Code | Description |
+|-----------------|-------------|------------|-------------|
+| `ValidationError` | 400 | `VALIDATION_ERROR` | Invalid request parameters |
+| `AuthenticationError` | 401 | `AUTHENTICATION_ERROR` | Invalid or missing API key |
+| `NotFoundError` | 404 | `NOT_FOUND` | Resource doesn't exist |
+| `ConflictError` | 409 | `CONFLICT` | Resource already exists |
+| `RateLimitError` | 429 | `RATE_LIMIT_EXCEEDED` | Too many requests |
+| `ServerError` | 500-504 | `SERVER_ERROR` | Internal server error |
+
+## Example: Complete Error Handling
+
+Here's a complete example demonstrating comprehensive error handling:
+
+```python
+from jasni import Jasni
+from jasni.errors import (
+    JasniError,
+    AuthenticationError,
+    NotFoundError,
+    ValidationError,
+    RateLimitError,
+    ConflictError,
+    ServerError,
+)
+import time
+
+def send_email_with_error_handling(
+    jasni: Jasni,
+    from_: str,
+    to: str,
+    subject: str,
+    text: str,
+    max_retries: int = 3
+):
+    """Send email with comprehensive error handling and retries."""
+    
+    for attempt in range(max_retries):
+        try:
+            result = jasni.emails.send(
+                from_=from_,
+                to=to,
+                subject=subject,
+                text=text,
+            )
+            print(f"Email sent successfully! Message ID: {result.message_id}")
+            return result
+            
+        except AuthenticationError:
+            print("Error: Invalid API key. Please check your credentials.")
+            raise
+            
+        except ValidationError as e:
+            print(f"Error: Invalid request - {e.message}")
+            raise
+            
+        except NotFoundError as e:
+            print(f"Error: Resource not found - {e.message}")
+            raise
+            
+        except ConflictError as e:
+            print(f"Error: Conflict - {e.message}")
+            raise
+            
+        except RateLimitError as e:
+            if attempt < max_retries - 1:
+                delay = e.retry_after or (2 ** attempt)
+                print(f"Rate limited. Waiting {delay}s before retry...")
+                time.sleep(delay)
+            else:
+                print("Error: Rate limit exceeded. Please try again later.")
+                raise
+                
+        except ServerError as e:
+            if attempt < max_retries - 1:
+                delay = 2 ** attempt
+                print(f"Server error. Waiting {delay}s before retry...")
+                time.sleep(delay)
+            else:
+                print("Error: Server unavailable. Please try again later.")
+                raise
+                
+        except JasniError as e:
+            print(f"Error: API error [{e.status}] - {e.message}")
+            raise
+            
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            raise
+    
+    return None
+
+# Usage
+jasni = Jasni("jsk_your_api_key")
+
+try:
+    send_email_with_error_handling(
+        jasni,
+        from_="me@mail.jasni.ai",
+        to="recipient@example.com",
+        subject="Hello!",
+        text="This is a test email.",
+    )
+except JasniError:
+    print("Failed to send email after all retries")
+```
