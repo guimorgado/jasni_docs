@@ -10,41 +10,67 @@ AI agents are becoming increasingly capable of handling complex tasks. But there
 
 Email is the universal protocol—everyone has it, every service supports it. Jasni gives your AI agents their own email identity, enabling them to communicate autonomously with the entire digital world.
 
-## The Challenge
+## Why Gmail Breaks for AI Agents
 
-Giving AI agents email capabilities isn't straightforward. Here's what you'd face building it yourself:
+You can give agents access to Gmail. The question is whether you *should*.
+
+Gmail works... until you need 10, 50, or 100 agent inboxes. Here's why human email infrastructure doesn't scale for autonomous agents:
 
 <AccordionGroup>
   <Accordion title="Legacy Protocols" icon="server">
-    Email uses protocols from the 1980s—IMAP for reading, SMTP for sending. Each has complex authentication, connection management, and countless edge cases. These were designed for humans at terminals, not autonomous agents.
+    Gmail was never designed for autonomous agents. Under the hood, it still relies on IMAP/SMTP—protocols from the 1980s with complex authentication, fragile connections, and endless edge cases. 
+    
+    You can make it work, but you'll spend weeks fighting infrastructure instead of building agents.
+
+    **The cost:** Slower development, brittle integrations, and constant maintenance.
   </Accordion>
   <Accordion title="Infrastructure Complexity" icon="building">
-    Running reliable email requires mail servers, DNS configuration (SPF, DKIM, DMARC), bounce handling, reputation management, and deliverability monitoring. It's an entire discipline, not a quick integration.
+    Running reliable email requires mail servers, DNS configuration (SPF, DKIM, DMARC), bounce handling, reputation management, and deliverability monitoring. 
+    
+    This is manageable for one inbox. It becomes a nightmare when you need one inbox per agent, per project, or per customer.
+
+    **The cost:** Weeks of DevOps work that has nothing to do with your agent's intelligence.
   </Accordion>
-  <Accordion title="No Native Real-Time" icon="clock">
-    Email wasn't built for instant responses. Without webhooks, you're stuck polling—wasting resources and adding latency. For agents that need to react in seconds, this is unacceptable.
+  <Accordion title="No Real-Time" icon="clock">
+    Email wasn't built for instant responses. Without webhooks, you're stuck polling—wasting resources and adding latency. Gmail's push notifications are unreliable and complex to set up.
+    
+    For agents that need to react in seconds, this delay is unacceptable.
+
+    **The cost:** Slow agents that feel unresponsive, missed SLAs, and poor user experience.
   </Accordion>
-  <Accordion title="Human-Centric Design" icon="robot">
-    Email clients are built for humans clicking buttons. AI agents need programmatic access—APIs to read, parse, respond, and organize messages automatically. This layer doesn't exist out of the box.
+  <Accordion title="Identity Mismatch" icon="user-xmark">
+    Gmail accounts represent humans. AI agents are non-human actors with different lifecycles, permissions, and responsibilities.
+
+    Mixing both leads to:
+    - **Shared credentials** that create security vulnerabilities
+    - **Confusing audit logs** where human and agent actions blend together
+    - **Permission chaos** when agents need access to human inboxes
+    - **Hard-to-debug behavior** when you can't tell who did what
+
+    **The cost:** Security risks, compliance headaches, and agents that feel bolted-on rather than native.
   </Accordion>
 </AccordionGroup>
 
-## Jasni: Email Identity for AI
+<Note>
+  **Email isn't the problem.** Using human email for agents is. Your agents deserve their own identity—purpose-built for autonomous operation.
+</Note>
 
-Jasni abstracts all email complexity into a simple REST API. Give your agents a dedicated inbox and let them communicate with the world.
+## Jasni: Email Built for Agents
+
+Jasni gives each agent its own email identity—a dedicated inbox designed for autonomous operation, not retrofitted from human tools.
 
 <CardGroup cols={2}>
   <Card title="Agent-First API" icon="code">
-    Send, receive, reply, and forward—all through clean REST endpoints. No IMAP connections, no SMTP configuration.
+    Send, receive, reply, and forward—all through clean REST endpoints. No IMAP connections, no SMTP configuration. Ship in hours, not weeks.
   </Card>
   <Card title="Instant Reactions" icon="bolt">
-    Webhooks notify your agent the moment an email arrives. No polling, no delays—respond in seconds.
+    Webhooks notify your agent the moment an email arrives. No polling, no delays—your agents respond in seconds, not minutes.
   </Card>
-  <Card title="Developer Experience" icon="laptop-code">
-    TypeScript and Python SDKs with full type support. Clear documentation. Predictable, consistent responses.
+  <Card title="Scale Without Pain" icon="layer-group">
+    Spin up 10 or 1,000 inboxes with the same API call. One inbox per agent, per project, per customer—no infrastructure overhead.
   </Card>
-  <Card title="Managed Infrastructure" icon="cloud">
-    We handle deliverability, reputation, DNS records, and compliance. You focus on your agent's intelligence.
+  <Card title="Clean Identity Separation" icon="fingerprint">
+    Each agent gets its own credentials, its own audit trail, its own permissions. No more mixing human and agent actions.
   </Card>
 </CardGroup>
 
