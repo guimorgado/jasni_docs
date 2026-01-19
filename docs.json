@@ -14,48 +14,11 @@
         "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting Started",
+            "group": "Get Started",
             "pages": [
               "index",
-              "quickstart",
-              "authentication"
-            ]
-          },
-          {
-            "group": "Core Concepts",
-            "pages": [
-              "concepts/emails",
-              "concepts/labels",
-              "concepts/webhooks"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "SDKs",
-        "groups": [
-          {
-            "group": "TypeScript SDK",
-            "pages": [
-              "sdks/typescript/overview",
-              "sdks/typescript/accounts",
-              "sdks/typescript/emails",
-              "sdks/typescript/drafts",
-              "sdks/typescript/labels",
-              "sdks/typescript/webhooks",
-              "sdks/typescript/errors"
-            ]
-          },
-          {
-            "group": "Python SDK",
-            "pages": [
-              "sdks/python/overview",
-              "sdks/python/accounts",
-              "sdks/python/emails",
-              "sdks/python/drafts",
-              "sdks/python/labels",
-              "sdks/python/webhooks",
-              "sdks/python/errors"
+              "introduction",
+              "quickstart"
             ]
           }
         ]
@@ -95,20 +58,6 @@
               "api-reference/webhooks/create",
               "api-reference/webhooks/update",
               "api-reference/webhooks/delete"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Webhooks",
-        "groups": [
-          {
-            "group": "Webhook Guide",
-            "pages": [
-              "webhooks/overview",
-              "webhooks/events",
-              "webhooks/security",
-              "webhooks/best-practices"
             ]
           }
         ]

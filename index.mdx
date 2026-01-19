@@ -1,7 +1,7 @@
 ---
-title: "Welcome to Jasni AI"
-sidebarTitle: "Introduction"
-description: "Build AI-powered email automation, agents, and integrations with the Jasni API"
+title: "Welcome to Jasni"
+sidebarTitle: "Welcome"
+description: "Email infrastructure for developers and AI agents"
 ---
 
 <img
@@ -15,125 +15,21 @@ description: "Build AI-powered email automation, agents, and integrations with t
   alt="Jasni AI Hero"
 />
 
-## What is Jasni?
+## Email Infrastructure for AI
 
-Jasni AI is an email infrastructure platform designed for developers and AI agents. Send, receive, and manage emails programmatically with our simple REST API.
-
-<CardGroup cols={2}>
-  <Card title="AI Email Agents" icon="robot">
-    Build intelligent agents that read, understand, and respond to emails automatically
-  </Card>
-  <Card title="Email Automation" icon="/icons-svg/webhook.svg">
-    Automate workflows triggered by incoming emails with webhooks
-  </Card>
-  <Card title="Customer Support" icon="/icons-svg/message.svg">
-    Create smart support systems that handle inquiries 24/7
-  </Card>
-  <Card title="Transactional Email" icon="/icons-svg/send.svg">
-    Send notifications, receipts, and updates reliably
-  </Card>
-</CardGroup>
-
-## Quick Start
-
-Get up and running with Jasni in minutes.
-
-<Steps>
-  <Step title="Get your API key">
-    Sign up at [app.jasni.ai](https://app.jasni.ai) and create an API key from your dashboard.
-  </Step>
-  <Step title="Connect your email">
-    Add your email account or create a new one with a custom domain.
-  </Step>
-  <Step title="Start building">
-    Use our REST API to send, receive, and manage emails programmatically.
-  </Step>
-</Steps>
-
-<Card title="Quickstart Guide" icon="rocket" href="/quickstart">
-  Follow our step-by-step guide to send your first email in under 5 minutes.
-</Card>
-
-## Features
-
-<AccordionGroup>
-  <Accordion title="Email Management" icon="/icons-svg/inbox.svg">
-    - List, read, and search emails from any folder
-    - Send emails with HTML and plain text support
-    - Reply to and forward emails with proper threading
-    - Mark emails as read/unread, delete, and organize with labels
-  </Accordion>
-  <Accordion title="Real-time Webhooks" icon="/icons-svg/webhook.svg">
-    - Receive instant notifications when emails arrive
-    - Track email delivery and bounce events
-    - Secure payloads with HMAC signatures
-    - Automatic retries with exponential backoff
-  </Accordion>
-  <Accordion title="Labels & Organization" icon="/icons-svg/label.svg">
-    - Create custom labels to categorize emails
-    - Apply labels programmatically for AI classification
-    - Filter and search by labels
-  </Accordion>
-  <Accordion title="Security" icon="/icons-svg/keys.svg">
-    - Bearer token authentication
-    - Rate limiting protection
-    - HTTPS-only API endpoints
-  </Accordion>
-</AccordionGroup>
-
-## Explore
+Jasni provides a simple REST API to send, receive, and manage emails programmatically. Build AI email agents, automate workflows, and integrate email into your applications.
 
 <CardGroup cols={2}>
-  <Card title="TypeScript SDK" icon="npm" href="/sdks/typescript/overview">
-    Official SDK with full type support
+  <Card title="Introduction" icon="book-open" href="/introduction">
+    Learn why Jasni exists and how it solves email complexity
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Send your first email in under 5 minutes
   </Card>
   <Card title="API Reference" icon="code" href="/api-reference/introduction">
-    Complete API documentation with examples
+    Explore all available endpoints
   </Card>
-  <Card title="Webhooks" icon="/icons-svg/webhook.svg" href="/webhooks/overview">
-    Learn how to receive real-time notifications
-  </Card>
-  <Card title="Authentication" icon="/icons-svg/keys.svg" href="/authentication">
-    How to authenticate your API requests
+  <Card title="Contact Support" icon="life-ring" href="mailto:support@jasni.ai">
+    Get help from our team
   </Card>
 </CardGroup>
-
-## Example
-
-Send an email with a single API call:
-
-<Tabs>
-  <Tab title="TypeScript SDK">
-    ```typescript
-    import { Jasni } from 'jasni-sdk'
-
-    const jasni = new Jasni('jsk_your_api_key')
-
-    await jasni.emails.send({
-      from: 'you@yourdomain.com',
-      to: 'recipient@example.com',
-      subject: 'Hello from Jasni!',
-      text: 'This is my first email sent via Jasni API.',
-    })
-    ```
-  </Tab>
-  <Tab title="cURL">
-    ```bash
-    curl -X POST https://api.jasni.ai/api/v1/emails/send \
-      -H "Authorization: Bearer jsk_your_api_key" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "from": "you@yourdomain.com",
-        "to": "recipient@example.com",
-        "subject": "Hello from Jasni!",
-        "text": "This is my first email sent via Jasni API."
-      }'
-    ```
-  </Tab>
-</Tabs>
-
-## Need Help?
-
-<Card title="Contact Support" icon="life-ring" href="mailto:support@jasni.ai">
-  Have questions? Our support team is here to help.
-</Card>
