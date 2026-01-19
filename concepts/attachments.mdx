@@ -1,0 +1,195 @@
+---
+title: "Attachments"
+sidebarTitle: "Attachments"
+description: "Send and receive files with your emails"
+icon: "paperclip"
+iconType: "solid"
+---
+
+## Overview
+
+Attachments allow you to send and receive files with your emails. Jasni supports all common file types and provides metadata about attachments when listing or reading emails.
+
+## Attachment Structure
+
+When you read an email, attachment metadata is included:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `filename` | string | Original filename |
+| `contentType` | string | MIME type (e.g., `application/pdf`) |
+| `size` | integer | File size in bytes |
+| `contentId` | string | Content-ID for inline attachments |
+
+### Example Response
+
+```json
+{
+  "uid": 123,
+  "subject": "Monthly Report",
+  "attachments": [
+    {
+      "filename": "report.pdf",
+      "contentType": "application/pdf",
+      "size": 245678
+    },
+    {
+      "filename": "data.xlsx",
+      "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "size": 89432
+    }
+  ]
+}
+```
+
+## Sending Attachments
+
+Include attachments when sending an email:
+
+```json
+POST /api/v1/emails/send
+{
+  "from": "you@domain.com",
+  "to": ["recipient@example.com"],
+  "subject": "Document attached",
+  "text": "Please find the document attached.",
+  "attachments": [
+    {
+      "filename": "document.pdf",
+      "content": "base64_encoded_content_here",
+      "contentType": "application/pdf"
+    }
+  ]
+}
+```
+
+<Warning>
+  Attachment content must be base64 encoded. Most SDKs handle this automatically.
+</Warning>
+
+## Supported File Types
+
+Jasni supports all standard MIME types:
+
+| Category | Common Types |
+|----------|--------------|
+| Documents | PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX |
+| Images | PNG, JPG, GIF, SVG, WEBP |
+| Archives | ZIP, RAR, 7Z, TAR, GZ |
+| Text | TXT, CSV, JSON, XML, HTML |
+| Media | MP3, MP4, WAV, MOV |
+
+## Size Limits
+
+| Limit | Value |
+|-------|-------|
+| Single attachment | 25 MB |
+| Total per email | 25 MB |
+
+<Note>
+  For larger files, consider using a file sharing service and including a link in the email.
+</Note>
+
+## Inline Attachments
+
+Inline attachments (like images embedded in HTML) use the `contentId` field:
+
+```json
+{
+  "html": "<p>See the image below:</p><img src=\"cid:logo123\">",
+  "attachments": [
+    {
+      "filename": "logo.png",
+      "content": "base64_encoded_content",
+      "contentType": "image/png",
+      "contentId": "logo123"
+    }
+  ]
+}
+```
+
+The `cid:` prefix in the HTML references the `contentId` of the attachment.
+
+## Working with Attachments in SDKs
+
+### TypeScript SDK
+
+```typescript
+import { Jasni } from 'jasni-sdk'
+import { readFileSync } from 'fs'
+
+const jasni = new Jasni('jsk_your_api_key')
+
+// Read file and convert to base64
+const fileBuffer = readFileSync('./document.pdf')
+const base64Content = fileBuffer.toString('base64')
+
+await jasni.emails.send({
+  from: 'you@domain.com',
+  to: 'recipient@example.com',
+  subject: 'Document attached',
+  text: 'Please find the document attached.',
+  attachments: [
+    {
+      filename: 'document.pdf',
+      content: base64Content,
+      contentType: 'application/pdf'
+    }
+  ]
+})
+```
+
+### Python SDK
+
+```python
+from jasni import Jasni
+import base64
+
+jasni = Jasni('jsk_your_api_key')
+
+# Read file and convert to base64
+with open('document.pdf', 'rb') as f:
+    content = base64.b64encode(f.read()).decode('utf-8')
+
+jasni.emails.send(
+    from_='you@domain.com',
+    to='recipient@example.com',
+    subject='Document attached',
+    text='Please find the document attached.',
+    attachments=[
+        {
+            'filename': 'document.pdf',
+            'content': content,
+            'contentType': 'application/pdf'
+        }
+    ]
+)
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Validate file types" icon="shield-check">
+    Check file types before processing attachments to avoid security risks.
+  </Accordion>
+  <Accordion title="Scan for malware" icon="virus-slash">
+    If accepting attachments from external sources, consider scanning them for malware.
+  </Accordion>
+  <Accordion title="Use descriptive filenames" icon="file-signature">
+    Give attachments clear, descriptive names so recipients know what they're downloading.
+  </Accordion>
+  <Accordion title="Compress when possible" icon="file-zipper">
+    For multiple files, consider compressing them into a single ZIP archive.
+  </Accordion>
+</AccordionGroup>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Messages" icon="envelope" href="/concepts/messages">
+    Learn about messages
+  </Card>
+  <Card title="Send API" icon="paper-plane" href="/api-reference/emails/send">
+    Send email endpoint
+  </Card>
+</CardGroup>

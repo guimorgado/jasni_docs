@@ -20,6 +20,17 @@
               "introduction",
               "quickstart"
             ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/inboxes",
+              "concepts/messages",
+              "concepts/threads",
+              "concepts/drafts",
+              "concepts/labels",
+              "concepts/attachments"
+            ]
           }
         ]
       },

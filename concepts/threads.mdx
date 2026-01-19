@@ -1,0 +1,138 @@
+---
+title: "Threads"
+sidebarTitle: "Threads"
+description: "Group related messages into conversations"
+icon: "comments"
+iconType: "solid"
+---
+
+## Overview
+
+A thread (or conversation) is a group of related messages linked together by their reply chain. When you reply to an email, Jasni automatically maintains proper threading so messages appear grouped in the recipient's email client.
+
+## How Threading Works
+
+Email threading relies on three headers:
+
+| Header | Description |
+|--------|-------------|
+| `Message-ID` | Unique identifier for each email |
+| `In-Reply-To` | References the parent email's Message-ID |
+| `References` | Full chain of Message-IDs in the thread |
+
+When you use Jasni's reply or forward endpoints, these headers are automatically set correctly.
+
+## Replying to Messages
+
+Reply to a message with proper threading:
+
+```json
+POST /api/v1/emails/123/reply?account=you@domain.com
+{
+  "text": "Thanks for your message!",
+  "replyAll": false,
+  "includeOriginal": true
+}
+```
+
+Jasni automatically:
+- Sets the correct `In-Reply-To` and `References` headers
+- Determines the correct recipients
+- Adds `Re:` prefix to the subject
+- Quotes the original message (if `includeOriginal` is true)
+
+### Reply vs Reply All
+
+| Option | Behavior |
+|--------|----------|
+| `replyAll: false` | Reply only to the sender |
+| `replyAll: true` | Reply to sender and all CC recipients |
+
+## Forwarding Messages
+
+Forward a message to new recipients:
+
+```json
+POST /api/v1/emails/123/forward?account=you@domain.com
+{
+  "to": ["colleague@example.com"],
+  "text": "FYI - see below"
+}
+```
+
+Forwarded emails:
+- Maintain the original thread context
+- Add `Fwd:` prefix to the subject
+- Include the original message content
+
+## Thread Structure Example
+
+```
+Thread: "Project Update"
+├── Message 1: "Project Update" (from: alice@...)
+│   └── Message 2: "Re: Project Update" (from: bob@...)
+│       └── Message 3: "Re: Project Update" (from: alice@...)
+│           └── Message 4: "Re: Project Update" (from: charlie@...)
+```
+
+Each reply links back to its parent via `In-Reply-To`, and contains the full chain in `References`.
+
+## Building Thread Views
+
+To display a conversation view in your application:
+
+1. Fetch messages from a folder
+2. Group messages by their `References` or root `Message-ID`
+3. Sort within each group by date
+
+```javascript
+// Example: Group messages into threads
+function groupIntoThreads(messages) {
+  const threads = new Map();
+  
+  for (const message of messages) {
+    // Get the root message ID from References or use Message-ID
+    const threadId = message.references?.[0] || message.messageId;
+    
+    if (!threads.has(threadId)) {
+      threads.set(threadId, []);
+    }
+    threads.get(threadId).push(message);
+  }
+  
+  // Sort messages within each thread by date
+  for (const thread of threads.values()) {
+    thread.sort((a, b) => new Date(a.date) - new Date(b.date));
+  }
+  
+  return threads;
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Always use the reply endpoint" icon="reply">
+    Don't manually construct reply headers. Use the `/reply` endpoint to ensure proper threading.
+  </Accordion>
+  <Accordion title="Preserve subject lines" icon="heading">
+    Avoid changing the subject line in replies, as some email clients use the subject for threading.
+  </Accordion>
+  <Accordion title="Include original context" icon="quote-left">
+    When replying, set `includeOriginal: true` to quote the original message for context.
+  </Accordion>
+</AccordionGroup>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Messages" icon="envelope" href="/concepts/messages">
+    Learn about messages
+  </Card>
+  <Card title="Reply API" icon="reply" href="/api-reference/emails/reply">
+    Reply endpoint
+  </Card>
+  <Card title="Forward API" icon="share" href="/api-reference/emails/forward">
+    Forward endpoint
+  </Card>
+</CardGroup>

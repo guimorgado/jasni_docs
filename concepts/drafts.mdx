@@ -1,0 +1,161 @@
+---
+title: "Drafts"
+sidebarTitle: "Drafts"
+description: "Save and manage email drafts"
+icon: "file-pen"
+iconType: "solid"
+---
+
+## Overview
+
+Drafts allow you to save email messages before sending them. This is useful for composing emails over time, scheduling sends, or building approval workflows.
+
+## Draft Structure
+
+A draft has the same structure as a message, stored in the Drafts folder:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `uid` | integer | Unique identifier within the mailbox |
+| `from` | string | Sender email address |
+| `to` | string[] | Recipient email addresses |
+| `cc` | string[] | CC recipients |
+| `bcc` | string[] | BCC recipients |
+| `subject` | string | Email subject line |
+| `text` | string | Plain text body |
+| `html` | string | HTML body |
+| `attachments` | object[] | List of attachments |
+
+## Operations
+
+### Create a Draft
+
+Save a new draft:
+
+```json
+POST /api/v1/emails/drafts
+{
+  "account": "you@domain.com",
+  "to": ["recipient@example.com"],
+  "subject": "Work in progress",
+  "text": "This is a draft I'm working on...",
+  "html": "<p>This is a draft I'm working on...</p>"
+}
+```
+
+### List Drafts
+
+Retrieve all drafts:
+
+```bash
+GET /api/v1/emails?account=you@domain.com&folder=Drafts
+```
+
+### Update a Draft
+
+Modify an existing draft:
+
+```json
+PUT /api/v1/emails/drafts/123
+{
+  "account": "you@domain.com",
+  "to": ["recipient@example.com", "another@example.com"],
+  "subject": "Updated subject",
+  "text": "Updated content..."
+}
+```
+
+### Send a Draft
+
+Convert a draft into a sent email:
+
+```json
+POST /api/v1/emails/drafts/123/send
+{
+  "account": "you@domain.com"
+}
+```
+
+<Note>
+  When you send a draft, it is automatically moved from the Drafts folder to Sent.
+</Note>
+
+### Delete a Draft
+
+Remove a draft without sending:
+
+```bash
+DELETE /api/v1/emails/drafts/123?account=you@domain.com
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Email Scheduling" icon="clock">
+    Create drafts and send them later at a scheduled time using your application logic.
+  </Accordion>
+  <Accordion title="Approval Workflows" icon="check-double">
+    Save emails as drafts, send them through an approval process, then send once approved.
+  </Accordion>
+  <Accordion title="AI Composition" icon="robot">
+    Let AI agents compose draft responses for human review before sending.
+  </Accordion>
+  <Accordion title="Template Storage" icon="copy">
+    Store commonly used email templates as drafts for quick access.
+  </Accordion>
+</AccordionGroup>
+
+## AI Agent Workflow Example
+
+A common pattern for AI email agents:
+
+```javascript
+async function handleIncomingEmail(email) {
+  // 1. AI generates a response
+  const aiResponse = await generateAIResponse(email);
+  
+  // 2. Save as draft for human review
+  const draft = await jasni.drafts.create({
+    account: 'support@yourcompany.com',
+    to: [email.from],
+    subject: `Re: ${email.subject}`,
+    text: aiResponse.text,
+    html: aiResponse.html
+  });
+  
+  // 3. Notify team for review
+  await notifyTeam({
+    message: 'New AI draft ready for review',
+    draftId: draft.uid,
+    originalEmail: email.subject
+  });
+  
+  // 4. Team reviews and either edits or approves
+  // 5. Send the draft when approved
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Auto-save frequently" icon="floppy-disk">
+    If building a compose UI, auto-save drafts every few seconds to prevent data loss.
+  </Accordion>
+  <Accordion title="Clean up old drafts" icon="trash">
+    Periodically review and delete old drafts that are no longer needed.
+  </Accordion>
+  <Accordion title="Use drafts for review workflows" icon="eye">
+    For sensitive communications, use drafts to enable human review before sending.
+  </Accordion>
+</AccordionGroup>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Messages" icon="envelope" href="/concepts/messages">
+    Learn about messages
+  </Card>
+  <Card title="Send API" icon="paper-plane" href="/api-reference/emails/send">
+    Send email endpoint
+  </Card>
+</CardGroup>

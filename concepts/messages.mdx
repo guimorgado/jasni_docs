@@ -1,0 +1,131 @@
+---
+title: "Messages"
+sidebarTitle: "Messages"
+description: "Send, receive, and manage email messages"
+icon: "envelope"
+iconType: "solid"
+---
+
+## Overview
+
+Messages are the core of Jasni. Every email you send, receive, reply to, or forward is a message. The API provides full control over message operations.
+
+## Message Structure
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `uid` | integer | Unique identifier within the mailbox |
+| `messageId` | string | RFC 2822 Message-ID header |
+| `from` | string | Sender email address |
+| `to` | string[] | Recipient email addresses |
+| `cc` | string[] | CC recipients |
+| `bcc` | string[] | BCC recipients (only visible to sender) |
+| `subject` | string | Email subject line |
+| `date` | datetime | When the email was sent/received |
+| `text` | string | Plain text body |
+| `html` | string | HTML body |
+| `attachments` | object[] | List of attachments |
+| `flags` | string[] | IMAP flags (e.g., `\Seen`, `\Flagged`) |
+
+## Operations
+
+### Send a Message
+
+```json
+POST /api/v1/emails/send
+{
+  "from": "you@domain.com",
+  "to": ["recipient@example.com"],
+  "subject": "Hello!",
+  "text": "Plain text content",
+  "html": "<p>HTML content</p>"
+}
+```
+
+<Tip>
+  Always provide both `text` and `html` versions for maximum compatibility across email clients.
+</Tip>
+
+### List Messages
+
+```bash
+GET /api/v1/emails?account=you@domain.com&folder=INBOX&limit=50
+```
+
+### Read a Message
+
+```bash
+GET /api/v1/emails/123?account=you@domain.com&folder=INBOX
+```
+
+### Update Message Status
+
+Mark as read:
+
+```json
+PATCH /api/v1/emails/123?account=you@domain.com
+{
+  "action": "read"
+}
+```
+
+Mark as unread:
+
+```json
+PATCH /api/v1/emails/123?account=you@domain.com
+{
+  "action": "unread"
+}
+```
+
+### Delete a Message
+
+```bash
+DELETE /api/v1/emails/123?account=you@domain.com
+```
+
+<Note>
+  Deleting a message moves it to the Trash folder. It is not permanently deleted immediately.
+</Note>
+
+## Message Flags
+
+Messages can have the following flags:
+
+| Flag | Description |
+|------|-------------|
+| `\Seen` | Message has been read |
+| `\Flagged` | Message is flagged/starred |
+| `\Draft` | Message is a draft |
+| `\Answered` | Message has been replied to |
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Provide both text and HTML" icon="code">
+    Some email clients don't render HTML. Always include a plain text fallback.
+  </Accordion>
+  <Accordion title="Use webhooks for incoming messages" icon="bolt">
+    Instead of polling, set up a webhook for `email.received` events to get instant notifications.
+  </Accordion>
+  <Accordion title="Validate recipients" icon="check">
+    Always validate email addresses before sending to avoid bounces and protect your sender reputation.
+  </Accordion>
+</AccordionGroup>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Threads" icon="comments" href="/concepts/threads">
+    Group related messages
+  </Card>
+  <Card title="Attachments" icon="paperclip" href="/concepts/attachments">
+    Add files to messages
+  </Card>
+  <Card title="Send API" icon="paper-plane" href="/api-reference/emails/send">
+    Send email endpoint
+  </Card>
+  <Card title="List API" icon="list" href="/api-reference/emails/list">
+    List emails endpoint
+  </Card>
+</CardGroup>

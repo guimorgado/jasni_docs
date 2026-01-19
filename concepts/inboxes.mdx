@@ -1,0 +1,91 @@
+---
+title: "Inboxes"
+sidebarTitle: "Inboxes"
+description: "Connect and manage your email accounts"
+icon: "inbox"
+iconType: "solid"
+---
+
+## Overview
+
+An inbox in Jasni represents a connected email account. Before you can send or receive emails through the API, you need to connect at least one inbox.
+
+<Note>
+  Each inbox is linked to your Jasni user account. You can connect multiple inboxes and manage them all through a single API key.
+</Note>
+
+## Connecting an Inbox
+
+You can connect an inbox in two ways:
+
+<CardGroup cols={2}>
+  <Card title="Connect Existing Account" icon="link">
+    Link your existing email account (Gmail, Outlook, or any IMAP provider)
+  </Card>
+  <Card title="Create New Account" icon="plus">
+    Create a new email address using your custom domain hosted on Jasni
+  </Card>
+</CardGroup>
+
+## Inbox Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `email` | string | The email address of the inbox |
+| `name` | string | Display name for the account |
+| `provider` | string | Email provider (gmail, outlook, imap) |
+| `status` | string | Connection status (active, error, disconnected) |
+| `created_at` | datetime | When the inbox was connected |
+
+## Folders
+
+Each inbox contains standard email folders:
+
+| Folder | Description |
+|--------|-------------|
+| `INBOX` | Incoming emails |
+| `Sent` | Sent emails |
+| `Drafts` | Draft emails |
+| `Trash` | Deleted emails |
+| `Spam` / `Junk` | Spam folder |
+
+<Tip>
+  Folder names may vary by provider. Jasni normalizes common folders, but custom folders use their original names.
+</Tip>
+
+## Multiple Inboxes
+
+You can connect multiple inboxes to your Jasni account. When making API calls, specify which inbox to use with the `account` parameter:
+
+```bash
+GET /api/v1/emails?account=support@yourcompany.com&folder=INBOX
+```
+
+```bash
+GET /api/v1/emails?account=sales@yourcompany.com&folder=INBOX
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Centralized Support" icon="headset">
+    Connect your support@, help@, and info@ addresses to manage all customer inquiries from one place.
+  </Accordion>
+  <Accordion title="Multi-Brand Management" icon="building">
+    Manage emails for multiple brands or products, each with their own inbox.
+  </Accordion>
+  <Accordion title="Department Routing" icon="users">
+    Connect department-specific inboxes (sales@, support@, billing@) and route based on the destination.
+  </Accordion>
+</AccordionGroup>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card title="Messages" icon="envelope" href="/concepts/messages">
+    Learn about email messages
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Send your first email
+  </Card>
+</CardGroup>
