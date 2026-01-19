@@ -1,0 +1,229 @@
+---
+title: "Sending & Receiving Email"
+description: "Learn how to send and receive emails programmatically with Jasni"
+icon: "/icons-svg/send.svg"
+---
+
+## Overview
+
+Jasni makes it easy to send and receive emails on behalf of your AI agents. This guide covers the fundamentals of email operations.
+
+## Sending Emails
+
+To send an email, use the `emails.send` endpoint. You can send plain text, HTML, or both.
+
+<Tabs>
+  <Tab title="TypeScript SDK">
+    ```typescript
+    import { Jasni } from 'jasni-sdk'
+
+    const jasni = new Jasni('jsk_your_api_key')
+
+    const result = await jasni.emails.send({
+      from: 'agent@yourdomain.com',
+      to: 'recipient@example.com',
+      subject: 'Hello from your AI agent',
+      text: 'This is a plain text message.',
+      html: '<p>This is an <strong>HTML</strong> message.</p>'
+    })
+
+    console.log('Email sent:', result.messageId)
+    ```
+  </Tab>
+  <Tab title="Python SDK">
+    ```python
+    from jasni import Jasni
+
+    jasni = Jasni('jsk_your_api_key')
+
+    result = jasni.emails.send(
+        from_='agent@yourdomain.com',
+        to='recipient@example.com',
+        subject='Hello from your AI agent',
+        text='This is a plain text message.',
+        html='<p>This is an <strong>HTML</strong> message.</p>'
+    )
+
+    print(f'Email sent: {result.message_id}')
+    ```
+  </Tab>
+  <Tab title="cURL">
+    ```bash
+    curl -X POST https://api.jasni.ai/api/v1/emails/send \
+      -H "Authorization: Bearer jsk_your_api_key" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "from": "agent@yourdomain.com",
+        "to": "recipient@example.com",
+        "subject": "Hello from your AI agent",
+        "text": "This is a plain text message.",
+        "html": "<p>This is an <strong>HTML</strong> message.</p>"
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+### Sending to Multiple Recipients
+
+You can send to multiple recipients by providing an array:
+
+```typescript
+await jasni.emails.send({
+  from: 'agent@yourdomain.com',
+  to: ['alice@example.com', 'bob@example.com'],
+  cc: ['manager@example.com'],
+  bcc: ['archive@yourdomain.com'],
+  subject: 'Team Update',
+  text: 'Hello team!'
+})
+```
+
+### Adding Attachments
+
+Include attachments with your emails:
+
+```typescript
+await jasni.emails.send({
+  from: 'agent@yourdomain.com',
+  to: 'recipient@example.com',
+  subject: 'Report attached',
+  text: 'Please find the report attached.',
+  attachments: [
+    {
+      filename: 'report.pdf',
+      content: base64EncodedContent,
+      contentType: 'application/pdf'
+    }
+  ]
+})
+```
+
+## Receiving Emails
+
+### Listing Emails
+
+Retrieve emails from an inbox:
+
+<Tabs>
+  <Tab title="TypeScript SDK">
+    ```typescript
+    const { emails, pagination } = await jasni.emails.list({
+      account: 'agent@yourdomain.com',
+      folder: 'INBOX',
+      limit: 20,
+      unreadOnly: true
+    })
+
+    for (const email of emails) {
+      console.log(`From: ${email.from}`)
+      console.log(`Subject: ${email.subject}`)
+      console.log(`Date: ${email.date}`)
+    }
+    ```
+  </Tab>
+  <Tab title="Python SDK">
+    ```python
+    result = jasni.emails.list(
+        account='agent@yourdomain.com',
+        folder='INBOX',
+        limit=20,
+        unread_only=True
+    )
+
+    for email in result.emails:
+        print(f'From: {email.from_}')
+        print(f'Subject: {email.subject}')
+        print(f'Date: {email.date}')
+    ```
+  </Tab>
+</Tabs>
+
+### Getting a Specific Email
+
+Retrieve the full content of a single email:
+
+```typescript
+const email = await jasni.emails.get({
+  account: 'agent@yourdomain.com',
+  messageId: '<abc123@example.com>'
+})
+
+console.log('Body:', email.text || email.html)
+console.log('Attachments:', email.attachments?.length || 0)
+```
+
+### Real-Time Email Reception
+
+For instant notifications when emails arrive, use webhooks:
+
+```typescript
+const webhook = await jasni.webhooks.create({
+  url: 'https://your-server.com/incoming-email',
+  events: ['email.received'],
+  description: 'Incoming email handler'
+})
+```
+
+<Info>
+  See the [Webhooks Overview](/webhooks/overview) for detailed information on setting up real-time notifications.
+</Info>
+
+## Replying to Emails
+
+Reply to an existing email thread:
+
+```typescript
+await jasni.emails.reply({
+  account: 'agent@yourdomain.com',
+  messageId: '<original-message-id@example.com>',
+  text: 'Thank you for your message. I will look into this.',
+  html: '<p>Thank you for your message. I will look into this.</p>'
+})
+```
+
+## Forwarding Emails
+
+Forward an email to another recipient:
+
+```typescript
+await jasni.emails.forward({
+  account: 'agent@yourdomain.com',
+  messageId: '<original-message-id@example.com>',
+  to: 'colleague@example.com',
+  text: 'FYI - see the email below.'
+})
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Always provide both text and HTML">
+    Some email clients don't render HTML. Providing both ensures your message is readable everywhere.
+  </Accordion>
+  <Accordion title="Use webhooks for real-time processing">
+    Instead of polling for new emails, set up webhooks to receive instant notifications when emails arrive.
+  </Accordion>
+  <Accordion title="Handle rate limits gracefully">
+    Implement exponential backoff when you encounter rate limit errors (429 status code).
+  </Accordion>
+  <Accordion title="Validate email addresses">
+    Always validate email addresses before sending to avoid bounces and protect your sender reputation.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Custom Domains" icon="/icons-svg/world.svg" href="/guides/domains/creating-custom-domains">
+    Send emails from your own domain
+  </Card>
+  <Card title="Webhooks" icon="/icons-svg/webhook.svg" href="/webhooks/overview">
+    Set up real-time notifications
+  </Card>
+  <Card title="Attachments" icon="/icons-svg/download.svg" href="/concepts/attachments">
+    Learn about handling attachments
+  </Card>
+  <Card title="API Reference" icon="/icons-svg/docs.svg" href="/api-reference/emails/send">
+    Explore the full API
+  </Card>
+</CardGroup>

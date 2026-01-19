@@ -1,0 +1,236 @@
+---
+title: "Managing Existing Domains"
+description: "Monitor, update, and maintain your configured domains"
+icon: "/icons-svg/refresh.svg"
+---
+
+## Overview
+
+Once you've added custom domains to Jasni, you'll need to monitor their health, update configurations, and manage email addresses. This guide covers domain management best practices.
+
+## Viewing Domain Status
+
+Access your domain overview in the [Jasni Dashboard](https://app.jasni.ai):
+
+1. Navigate to **Settings** > **Domains**
+2. View the list of all configured domains
+3. Click on any domain to see detailed status
+
+### Domain Health Indicators
+
+| Indicator | Status | Action Required |
+|-----------|--------|-----------------|
+| DNS Verified | All records valid | None |
+| DNS Warning | Partial verification | Review DNS records |
+| DNS Error | Records missing/invalid | Update DNS configuration |
+| Inactive | Domain not in use | Consider removing or reactivating |
+
+## Monitoring Domain Reputation
+
+Your domain's reputation directly impacts email deliverability. Monitor these metrics:
+
+### Key Metrics
+
+<CardGroup cols={3}>
+  <Card title="Bounce Rate" icon="/icons-svg/alert.svg">
+    Keep below 2%
+  </Card>
+  <Card title="Spam Complaints" icon="/icons-svg/trash.svg">
+    Keep below 0.1%
+  </Card>
+  <Card title="Delivery Rate" icon="/icons-svg/check.svg">
+    Aim for 95%+
+  </Card>
+</CardGroup>
+
+### Viewing Domain Analytics
+
+```typescript
+// Get domain statistics via API
+const stats = await jasni.domains.getStats({
+  domain: 'yourdomain.com',
+  period: '30d'
+})
+
+console.log('Emails sent:', stats.sent)
+console.log('Delivered:', stats.delivered)
+console.log('Bounced:', stats.bounced)
+console.log('Complaints:', stats.complaints)
+```
+
+## Updating DNS Records
+
+If you need to update DNS records (e.g., after rotating DKIM keys):
+
+### Re-verify DNS
+
+1. Go to **Settings** > **Domains** > **[Your Domain]**
+2. Click **Re-verify DNS**
+3. Jasni will check all DNS records again
+
+### Rotating DKIM Keys
+
+For security best practices, rotate DKIM keys periodically:
+
+1. Generate new DKIM keys in your dashboard
+2. Add the new DKIM records to DNS
+3. Wait for DNS propagation
+4. Verify new records in Jasni
+5. Remove old DKIM records after 48 hours
+
+<Warning>
+  Keep old DKIM records active for at least 48 hours after adding new ones. This ensures emails in transit can still be verified.
+</Warning>
+
+## Managing Email Addresses
+
+### Listing Addresses
+
+View all email addresses configured for a domain:
+
+```typescript
+const addresses = await jasni.accounts.list({
+  domain: 'yourdomain.com'
+})
+
+addresses.forEach(addr => {
+  console.log(`${addr.email} - ${addr.status}`)
+})
+```
+
+### Creating New Addresses
+
+```typescript
+const account = await jasni.accounts.create({
+  email: 'newagent@yourdomain.com',
+  name: 'New Agent',
+  type: 'agent'
+})
+```
+
+### Deactivating Addresses
+
+Temporarily disable an email address without deleting it:
+
+```typescript
+await jasni.accounts.update({
+  email: 'oldagent@yourdomain.com',
+  status: 'inactive'
+})
+```
+
+## Domain Settings
+
+### Configuring Default Behavior
+
+Set default settings for all emails from a domain:
+
+| Setting | Description | Options |
+|---------|-------------|---------|
+| Default Reply-To | Where replies should go | Email address |
+| Tracking | Open/click tracking | Enabled/Disabled |
+| Unsubscribe Header | List-Unsubscribe header | Auto/Manual/Disabled |
+| Footer | Default email footer | HTML content |
+
+### Updating Domain Settings
+
+```typescript
+await jasni.domains.update({
+  domain: 'yourdomain.com',
+  settings: {
+    defaultReplyTo: 'support@yourdomain.com',
+    trackOpens: true,
+    trackClicks: true,
+    addUnsubscribeHeader: true
+  }
+})
+```
+
+## Handling Domain Issues
+
+### Common Issues and Solutions
+
+<AccordionGroup>
+  <Accordion title="Sudden increase in bounces">
+    1. Check if your DNS records are still valid
+    2. Verify you haven't been added to blocklists
+    3. Review recent email content for spam triggers
+    4. Contact Jasni support if issues persist
+  </Accordion>
+  <Accordion title="DMARC alignment failures">
+    1. Ensure the `From` address matches your domain
+    2. Verify SPF includes all sending sources
+    3. Check DKIM signatures are valid
+    4. Review DMARC reports for specific failures
+  </Accordion>
+  <Accordion title="Emails delayed or not arriving">
+    1. Check domain verification status
+    2. Verify MX records if receiving
+    3. Review webhook logs for delivery events
+    4. Check recipient-side spam folders
+  </Accordion>
+  <Accordion title="Domain verification expired">
+    1. Re-verify DNS records in the dashboard
+    2. Ensure no DNS changes were made accidentally
+    3. Check for domain transfer or DNS provider changes
+  </Accordion>
+</AccordionGroup>
+
+## Removing a Domain
+
+If you no longer need a domain:
+
+1. Go to **Settings** > **Domains** > **[Your Domain]**
+2. Click **Remove Domain**
+3. Confirm the removal
+
+<Warning>
+  Removing a domain will:
+  - Disable all email addresses on that domain
+  - Stop all incoming email processing
+  - Invalidate any webhooks using those addresses
+  
+  This action cannot be undone.
+</Warning>
+
+### Before Removing
+
+- Migrate any active email addresses to a new domain
+- Update any integrations using the domain
+- Export any necessary data or logs
+- Update webhooks to use new addresses
+
+## Domain Warm-Up
+
+For new domains or domains with low sending volume, implement a warm-up strategy:
+
+### Warm-Up Schedule
+
+| Week | Daily Volume | Notes |
+|------|--------------|-------|
+| 1 | 50-100 | Only engaged recipients |
+| 2 | 200-500 | Gradually increase |
+| 3 | 500-1000 | Monitor metrics closely |
+| 4 | 1000-2500 | Scale based on performance |
+| 5+ | Full volume | Maintain good practices |
+
+<Tip>
+  Start by sending to your most engaged recipients who are likely to open and interact with your emails. This builds positive reputation signals.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Add New Domain" icon="/icons-svg/plus.svg" href="/guides/domains/creating-custom-domains">
+    Configure another domain
+  </Card>
+  <Card title="Send Emails" icon="/icons-svg/send.svg" href="/guides/sending-receiving-email">
+    Send from your domains
+  </Card>
+  <Card title="Webhooks" icon="/icons-svg/webhook.svg" href="/webhooks/overview">
+    Monitor email events
+  </Card>
+  <Card title="API Reference" icon="/icons-svg/docs.svg" href="/api-reference/introduction">
+    Explore the full API
+  </Card>
+</CardGroup>

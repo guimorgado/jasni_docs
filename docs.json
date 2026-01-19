@@ -31,6 +31,29 @@
               "concepts/labels",
               "concepts/attachments"
             ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/sending-receiving-email",
+              {
+                "group": "Domains",
+                "icon": "/icons-svg/world.svg",
+                "pages": [
+                  "guides/domains/creating-custom-domains",
+                  "guides/domains/managing-existing-domains"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
+              "webhooks/overview",
+              "webhooks/events",
+              "webhooks/security",
+              "webhooks/best-practices"
+            ]
           }
         ]
       },
