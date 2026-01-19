@@ -1,6 +1,6 @@
 ---
 title: "TypeScript SDK"
-description: "Official TypeScript/JavaScript SDK for the Jasni Email API"
+description: "Give your AI agents email capabilities with the official TypeScript SDK"
 ---
 
 ## Installation
@@ -33,18 +33,18 @@ import { Jasni } from 'jasni-sdk'
 // Initialize the client with your API key
 const jasni = new Jasni('jsk_your_api_key')
 
-// List your email accounts
+// List your agent's inboxes
 const { accounts } = await jasni.accounts.list()
 console.log(accounts)
 
-// Send an email
+// Let your agent send an email
 const result = await jasni.emails.send({
-  from: 'me@mail.jasni.ai',
-  to: 'recipient@example.com',
-  subject: 'Hello from Jasni!',
-  text: 'This email was sent using the Jasni SDK.',
+  from: 'agent@yourdomain.com',
+  to: 'user@example.com',
+  subject: 'Your request has been processed',
+  text: 'I have completed the task you requested. Here are the results...',
 })
-console.log('Sent:', result.messageId)
+console.log('Agent sent email:', result.messageId)
 ```
 
 ## Configuration
@@ -69,10 +69,10 @@ The Jasni client provides access to the following resources:
 
 <CardGroup cols={2}>
   <Card title="Accounts" icon="user" href="/sdks/typescript/accounts">
-    Create and manage email accounts
+    Manage your agent's inboxes
   </Card>
   <Card title="Emails" icon="envelope" href="/sdks/typescript/emails">
-    Send, receive, and manage emails
+    Send, receive, and process emails
   </Card>
   <Card title="Drafts" icon="file-pen" href="/sdks/typescript/drafts">
     Create and manage email drafts
@@ -81,7 +81,7 @@ The Jasni client provides access to the following resources:
     Organize emails with labels
   </Card>
   <Card title="Webhooks" icon="bolt" href="/sdks/typescript/webhooks">
-    Set up real-time notifications
+    Enable real-time reactions
   </Card>
 </CardGroup>
 

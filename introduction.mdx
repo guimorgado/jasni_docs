@@ -1,72 +1,79 @@
 ---
 title: "Introduction"
 sidebarTitle: "Introduction"
-description: "Why we built Jasni and the problem it solves"
+description: "Give your AI agents the power to communicate autonomously via email"
 ---
 
-## The Problem
+## The Vision
 
-Building applications that work with email is surprisingly difficult. Developers face multiple challenges:
+AI agents are becoming increasingly capable of handling complex tasks. But there's a fundamental limitation: they lack their own communication channel. They can't independently reach out to services, respond to people, or coordinate with other agents.
+
+Email is the universal protocol—everyone has it, every service supports it. Jasni gives your AI agents their own email identity, enabling them to communicate autonomously with the entire digital world.
+
+## The Challenge
+
+Giving AI agents email capabilities isn't straightforward. Here's what you'd face building it yourself:
 
 <AccordionGroup>
-  <Accordion title="Complex Protocols" icon="server">
-    Email relies on protocols designed decades ago. IMAP for reading, SMTP for sending, and each with their own authentication methods, connection handling, and edge cases. These protocols were not designed for modern applications or AI agents.
+  <Accordion title="Legacy Protocols" icon="server">
+    Email uses protocols from the 1980s—IMAP for reading, SMTP for sending. Each has complex authentication, connection management, and countless edge cases. These were designed for humans at terminals, not autonomous agents.
   </Accordion>
-  <Accordion title="Infrastructure Burden" icon="building">
-    To handle email reliably, you need to manage mail servers, deal with DNS records (SPF, DKIM, DMARC), handle bounces, maintain reputation, and ensure deliverability. This is a full-time job, not a feature.
+  <Accordion title="Infrastructure Complexity" icon="building">
+    Running reliable email requires mail servers, DNS configuration (SPF, DKIM, DMARC), bounce handling, reputation management, and deliverability monitoring. It's an entire discipline, not a quick integration.
   </Accordion>
-  <Accordion title="No Real-Time Capabilities" icon="clock">
-    Traditional email doesn't push notifications. You have to poll for new messages, wasting resources and adding latency. For AI agents that need to respond quickly, this is a dealbreaker.
+  <Accordion title="No Native Real-Time" icon="clock">
+    Email wasn't built for instant responses. Without webhooks, you're stuck polling—wasting resources and adding latency. For agents that need to react in seconds, this is unacceptable.
   </Accordion>
-  <Accordion title="Not Built for AI" icon="robot">
-    AI applications need programmatic access to emails—reading, parsing, responding, and organizing messages automatically. Existing email services are built for humans clicking buttons, not agents making API calls.
+  <Accordion title="Human-Centric Design" icon="robot">
+    Email clients are built for humans clicking buttons. AI agents need programmatic access—APIs to read, parse, respond, and organize messages automatically. This layer doesn't exist out of the box.
   </Accordion>
 </AccordionGroup>
 
-## The Solution
+## Jasni: Email Identity for AI
 
-Jasni abstracts all email complexity into a simple REST API. You focus on building your application while we handle the infrastructure.
+Jasni abstracts all email complexity into a simple REST API. Give your agents a dedicated inbox and let them communicate with the world.
 
 <CardGroup cols={2}>
-  <Card title="Simple API" icon="code">
-    One endpoint to send, one to receive, one to reply. No IMAP connections, no SMTP configuration, no protocol headaches.
+  <Card title="Agent-First API" icon="code">
+    Send, receive, reply, and forward—all through clean REST endpoints. No IMAP connections, no SMTP configuration.
   </Card>
-  <Card title="Real-Time Webhooks" icon="bolt">
-    Get instant notifications when emails arrive. No polling, no delays. Your AI agent can respond in seconds.
+  <Card title="Instant Reactions" icon="bolt">
+    Webhooks notify your agent the moment an email arrives. No polling, no delays—respond in seconds.
   </Card>
-  <Card title="Built for Developers" icon="laptop-code">
-    TypeScript and Python SDKs with full type support. Clear documentation. Predictable responses.
+  <Card title="Developer Experience" icon="laptop-code">
+    TypeScript and Python SDKs with full type support. Clear documentation. Predictable, consistent responses.
   </Card>
   <Card title="Managed Infrastructure" icon="cloud">
-    We handle servers, deliverability, reputation, and compliance. You handle your product.
+    We handle deliverability, reputation, DNS records, and compliance. You focus on your agent's intelligence.
   </Card>
 </CardGroup>
 
 ## How It Works
 
 <Steps>
-  <Step title="Connect Your Email">
-    Add your existing email account or create a new one with your custom domain. We connect via secure protocols and sync your messages.
+  <Step title="Create an Inbox for Your Agent">
+    Set up a dedicated email address for your AI agent—either with your custom domain or connect an existing account.
   </Step>
-  <Step title="Use the API">
-    Send, receive, reply, forward, and organize emails with simple HTTP requests. Our SDKs make it even easier.
+  <Step title="Integrate the API">
+    Use simple HTTP requests or our SDKs to send, receive, reply, and manage emails programmatically.
   </Step>
-  <Step title="Receive Webhooks">
-    Set up webhook endpoints to get notified instantly when new emails arrive. Perfect for AI agents that need to respond in real-time.
+  <Step title="React in Real-Time">
+    Configure webhooks to notify your agent instantly when emails arrive. Your agent can read, process, and respond autonomously.
   </Step>
 </Steps>
 
-## Use Cases
+## What You Can Build
 
-Jasni is ideal for:
+Jasni enables a new category of autonomous AI applications:
 
-- **AI Email Agents**: Build intelligent assistants that read, understand, and respond to emails automatically
-- **Customer Support Automation**: Create systems that handle inquiries, route tickets, and respond to common questions
-- **Workflow Automation**: Trigger actions based on incoming emails—parse invoices, extract data, update CRMs
-- **Transactional Email**: Send notifications, receipts, and updates reliably from your application
+- **Autonomous AI Agents**: Agents with their own email identity that can independently communicate with services, people, and other agents
+- **Intelligent Customer Support**: AI that handles inquiries, gathers context, and resolves issues—all via email
+- **Automated Workflows**: Parse incoming invoices, extract data, schedule meetings, update CRMs—triggered by email
+- **Multi-Agent Coordination**: Enable your AI agents to collaborate with each other through email threads
+- **Service Integrations**: Let your agents interact with any service that accepts email (which is almost everything)
 
 ## Next Steps
 
 <Card title="Quickstart" icon="rocket" href="/quickstart">
-  Send your first email with Jasni in under 5 minutes.
+  Give your AI agent an email inbox in under 5 minutes.
 </Card>

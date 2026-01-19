@@ -1,6 +1,6 @@
 ---
 title: "API Reference"
-description: "Complete reference for the Jasni AI REST API"
+description: "Complete API reference for giving your AI agents email capabilities"
 ---
 
 ## Base URL
@@ -125,11 +125,11 @@ GET /api/v1/emails?account=you@domain.com&limit=20
 ## Quick Example
 
 ```typescript
-// Simple API client example
+// Let your AI agent send an email
 const API_KEY = 'jsk_your_api_key';
 const BASE_URL = 'https://api.jasni.ai/api/v1';
 
-// Send an email
+// Agent sends an email
 const response = await fetch(`${BASE_URL}/emails/send`, {
   method: 'POST',
   headers: {
@@ -137,10 +137,10 @@ const response = await fetch(`${BASE_URL}/emails/send`, {
     'Content-Type': 'application/json',
   },
   body: JSON.stringify({
-    from: 'you@domain.com',
+    from: 'agent@yourdomain.com',
     to: 'recipient@example.com',
-    subject: 'Hello!',
-    text: 'Message content',
+    subject: 'Following up on your request',
+    text: 'I have processed your request and here are the results...',
   }),
 });
 

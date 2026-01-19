@@ -1,24 +1,24 @@
 ---
 title: "Webhooks Overview"
-description: "Receive real-time notifications for email events"
+description: "Enable your AI agents to react instantly to incoming emails"
 ---
 
 ## What are Webhooks?
 
-Webhooks are HTTP callbacks that notify your application when events occur in Jasni. Instead of polling the API to check for new emails, webhooks push data to your server in real-time.
+Webhooks are the trigger mechanism that awakens your AI agent. Instead of your agent constantly checking for new emails, webhooks notify it instantly when something happens—a new email arrives, a message bounces, or a delivery fails.
 
 <CardGroup cols={2}>
-  <Card title="Real-time" icon="/icons-svg/refresh.svg">
-    Get notified instantly when events happen
+  <Card title="Instant Awareness" icon="/icons-svg/refresh.svg">
+    Your agent knows the moment an email arrives
   </Card>
-  <Card title="Efficient" icon="/icons-svg/check.svg">
-    No need to poll the API repeatedly
+  <Card title="Resource Efficient" icon="/icons-svg/check.svg">
+    No wasted cycles polling—agents only wake when needed
   </Card>
   <Card title="Secure" icon="/icons-svg/keys.svg">
-    Signed payloads prevent tampering
+    Signed payloads ensure events are authentic
   </Card>
   <Card title="Reliable" icon="/icons-svg/webhook.svg">
-    Automatic retries on failure
+    Automatic retries guarantee delivery
   </Card>
 </CardGroup>
 
@@ -26,22 +26,22 @@ Webhooks are HTTP callbacks that notify your application when events occur in Ja
 
 ### 1. Create a Webhook Endpoint
 
-First, create an HTTP endpoint on your server to receive webhooks:
+Create an HTTP endpoint that will wake your agent when events occur:
 
 ```javascript
 // Express.js example
-app.post('/webhooks/jasni', express.json(), (req, res) => {
+app.post('/webhooks/jasni', express.json(), async (req, res) => {
   const { event, data } = req.body;
   
-  console.log(`Received ${event}:`, data);
+  console.log(`Agent notified of ${event}`);
   
-  // Process the event
+  // Trigger your AI agent
   switch (event) {
     case 'email.received':
-      handleNewEmail(data);
+      await agent.processIncomingEmail(data);
       break;
     case 'email.sent':
-      handleSentEmail(data);
+      await agent.confirmDelivery(data);
       break;
   }
   
@@ -129,7 +129,7 @@ app.post('/webhooks/jasni', express.raw({ type: 'application/json' }), (req, res
 
 ## Webhook Payload
 
-Every webhook includes:
+Every webhook includes all the context your agent needs to act:
 
 ```json
 {
@@ -138,13 +138,13 @@ Every webhook includes:
   "data": {
     "id": "12345",
     "messageId": "<abc@example.com>",
-    "from": "sender@example.com",
-    "to": ["you@domain.com"],
-    "subject": "Hello!",
-    "account": "you@domain.com",
+    "from": "customer@example.com",
+    "to": ["agent@yourdomain.com"],
+    "subject": "Need help with my order",
+    "account": "agent@yourdomain.com",
     "folder": "INBOX",
-    "text": "Email content...",
-    "html": "<p>Email content...</p>"
+    "text": "Hi, I have a question about my recent order...",
+    "html": "<p>Hi, I have a question about my recent order...</p>"
   }
 }
 ```
@@ -177,20 +177,20 @@ After 3 failed retries, the delivery is marked as failed.
 ## Best Practices
 
 <AccordionGroup>
-  <Accordion title="Respond quickly" icon="/icons-svg/refresh.svg">
-    Return a `200` response immediately, then process the event asynchronously. Webhooks timeout after 30 seconds.
+  <Accordion title="Acknowledge fast, process async" icon="/icons-svg/refresh.svg">
+    Return a `200` response immediately, then queue the event for your agent to process. Webhooks timeout after 30 seconds.
   </Accordion>
   
-  <Accordion title="Handle duplicates" icon="/icons-svg/copy.svg">
-    Your endpoint should be idempotent. The same event might be delivered multiple times.
+  <Accordion title="Design for idempotency" icon="/icons-svg/copy.svg">
+    The same event might be delivered multiple times. Your agent should handle duplicates gracefully.
   </Accordion>
   
-  <Accordion title="Verify signatures" icon="/icons-svg/keys.svg">
-    Always verify the `X-Webhook-Signature` header to ensure requests are from Jasni.
+  <Accordion title="Always verify signatures" icon="/icons-svg/keys.svg">
+    Verify the `X-Webhook-Signature` header to ensure events are genuinely from Jasni—not spoofed.
   </Accordion>
   
   <Accordion title="Use HTTPS" icon="/icons-svg/world.svg">
-    Always use HTTPS endpoints in production to protect webhook data in transit.
+    Always use HTTPS endpoints in production to protect email content in transit.
   </Accordion>
 </AccordionGroup>
 

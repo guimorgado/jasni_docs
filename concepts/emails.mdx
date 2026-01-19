@@ -1,21 +1,21 @@
 ---
 title: "Emails"
-description: "Understanding email operations in Jasni"
+description: "Enable your AI agents to send, receive, and act on emails"
 ---
 
 ## Overview
 
-Jasni provides a complete email management API that allows you to programmatically send, receive, read, reply to, and forward emails. All operations are performed through your connected email accounts.
+Jasni provides a complete email API that enables your AI agents to communicate autonomously. Send, receive, read, reply, and forward emails—all programmatically through your agent's inbox.
 
-## Email Accounts
+## Agent Inboxes
 
-Before you can work with emails, you need to connect at least one email account to Jasni. You can:
+Before your agent can work with emails, it needs an inbox—its own email identity. You can:
 
-- **Connect an existing account**: Use your existing email provider (Gmail, Outlook, custom IMAP)
-- **Create a new account**: Set up a new email address with your custom domain
+- **Create a new identity**: Set up a fresh email address with your custom domain for your agent
+- **Connect an existing account**: Give your agent access to an existing email provider (Gmail, Outlook, custom IMAP)
 
 <Note>
-  Each email account is linked to your Jasni user. You can only access emails from accounts you own.
+  Each inbox is linked to your Jasni account. Your agents can only access emails from inboxes you've configured.
 </Note>
 
 ## Email Structure
@@ -160,23 +160,23 @@ When listing or reading emails, attachment metadata is included:
   Attachment download endpoints are available for fetching actual attachment content.
 </Note>
 
-## Best Practices
+## Best Practices for AI Agents
 
 <AccordionGroup>
-  <Accordion title="Use appropriate rate limiting" icon="/icons-svg/refresh.svg">
-    Don't poll the inbox too frequently. Consider using webhooks for real-time notifications instead.
+  <Accordion title="Use webhooks for instant reactions" icon="/icons-svg/webhook.svg">
+    Set up webhooks for `email.received` events so your agent can react immediately. Polling adds latency and wastes resources.
   </Accordion>
   
-  <Accordion title="Handle threading correctly" icon="/icons-svg/message.svg">
-    When building conversation views, group emails by their References header to maintain proper threading.
+  <Accordion title="Maintain conversation context" icon="/icons-svg/message.svg">
+    Use the References header to track email threads. This helps your agent understand conversation history and respond contextually.
   </Accordion>
   
-  <Accordion title="Validate email addresses" icon="/icons-svg/check.svg">
-    Always validate recipient email addresses before sending to avoid bounces.
+  <Accordion title="Validate before sending" icon="/icons-svg/check.svg">
+    Have your agent validate recipient email addresses before sending to avoid bounces and maintain sender reputation.
   </Accordion>
   
-  <Accordion title="Use webhooks for incoming email" icon="/icons-svg/webhook.svg">
-    Instead of polling, set up a webhook for `email.received` events to get instant notifications.
+  <Accordion title="Respect rate limits" icon="/icons-svg/refresh.svg">
+    Implement proper rate limiting in your agent to avoid hitting API limits, especially when processing large volumes.
   </Accordion>
 </AccordionGroup>
 

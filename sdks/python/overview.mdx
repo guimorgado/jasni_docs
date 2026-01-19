@@ -1,6 +1,6 @@
 ---
 title: "Python SDK"
-description: "Official Python SDK for the Jasni Email API"
+description: "Give your AI agents email capabilities with the official Python SDK"
 ---
 
 ## Installation
@@ -19,23 +19,23 @@ from jasni import Jasni
 # Initialize the client with your API key
 jasni = Jasni("jsk_your_api_key")
 
-# List your email accounts
+# List your agent's inboxes
 accounts = jasni.accounts.list()
-print(f"You have {accounts.total} accounts")
+print(f"Your agent has {accounts.total} inboxes")
 
-# Send an email
+# Let your agent send an email
 result = jasni.emails.send(
-    from_="me@mail.jasni.ai",
-    to="recipient@example.com",
-    subject="Hello from Jasni!",
-    text="This email was sent using the Jasni Python SDK.",
+    from_="agent@yourdomain.com",
+    to="user@example.com",
+    subject="Your request has been processed",
+    text="I have completed the task you requested. Here are the results...",
 )
-print(f"Email sent with ID: {result.message_id}")
+print(f"Agent sent email with ID: {result.message_id}")
 ```
 
 ## Async Support
 
-The SDK also supports async operations with `AsyncJasni`:
+The SDK supports async operations with `AsyncJasni`—ideal for AI agents that need to handle multiple tasks concurrently:
 
 ```python
 import asyncio
@@ -44,8 +44,8 @@ from jasni import AsyncJasni
 async def main():
     jasni = AsyncJasni("jsk_your_api_key")
     
-    # List emails
-    emails = await jasni.emails.list(account="me@mail.jasni.ai")
+    # Check agent's inbox
+    emails = await jasni.emails.list(account="agent@yourdomain.com")
     for email in emails.emails:
         print(f"- {email.subject}")
     
@@ -80,10 +80,10 @@ The Jasni client provides access to the following resources:
 
 <CardGroup cols={2}>
   <Card title="Accounts" icon="user" href="/sdks/python/accounts">
-    Create and manage email accounts
+    Manage your agent's inboxes
   </Card>
   <Card title="Emails" icon="envelope" href="/sdks/python/emails">
-    Send, receive, and manage emails
+    Send, receive, and process emails
   </Card>
   <Card title="Drafts" icon="file-pen" href="/sdks/python/drafts">
     Create and manage email drafts
@@ -92,7 +92,7 @@ The Jasni client provides access to the following resources:
     Organize emails with labels
   </Card>
   <Card title="Webhooks" icon="bolt" href="/sdks/python/webhooks">
-    Set up real-time notifications
+    Enable real-time reactions
   </Card>
 </CardGroup>
 
@@ -121,11 +121,11 @@ The SDK supports context managers for automatic resource cleanup:
 ```python
 # Synchronous
 with Jasni("jsk_your_api_key") as jasni:
-    emails = jasni.emails.list(account="me@mail.jasni.ai")
+    emails = jasni.emails.list(account="agent@yourdomain.com")
 
 # Asynchronous
 async with AsyncJasni("jsk_your_api_key") as jasni:
-    emails = await jasni.emails.list(account="me@mail.jasni.ai")
+    emails = await jasni.emails.list(account="agent@yourdomain.com")
 ```
 
 ## Requirements

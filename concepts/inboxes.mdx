@@ -1,29 +1,29 @@
 ---
 title: "Inboxes"
 sidebarTitle: "Inboxes"
-description: "Connect and manage your email accounts"
+description: "Give your AI agents their own email identity"
 icon: "inbox"
 iconType: "solid"
 ---
 
 ## Overview
 
-An inbox in Jasni represents a connected email account. Before you can send or receive emails through the API, you need to connect at least one inbox.
+An inbox in Jasni is the email identity for your AI agent. It's a dedicated address from which your agent can send, receive, and act on emails autonomously—communicating with services, people, and other agents.
 
 <Note>
-  Each inbox is linked to your Jasni user account. You can connect multiple inboxes and manage them all through a single API key.
+  Each inbox is linked to your Jasni account. You can create multiple inboxes for different agents or purposes, all managed through a single API key.
 </Note>
 
-## Connecting an Inbox
+## Creating an Agent Inbox
 
-You can connect an inbox in two ways:
+You can set up an inbox for your agent in two ways:
 
 <CardGroup cols={2}>
-  <Card title="Connect Existing Account" icon="link">
-    Link your existing email account (Gmail, Outlook, or any IMAP provider)
+  <Card title="Create New Identity" icon="plus">
+    Create a fresh email address with your custom domain—a clean identity for your agent
   </Card>
-  <Card title="Create New Account" icon="plus">
-    Create a new email address using your custom domain hosted on Jasni
+  <Card title="Connect Existing Account" icon="link">
+    Link an existing email account (Gmail, Outlook, or any IMAP provider) to give your agent access
   </Card>
 </CardGroup>
 
@@ -31,11 +31,11 @@ You can connect an inbox in two ways:
 
 | Property | Type | Description |
 |----------|------|-------------|
-| `email` | string | The email address of the inbox |
-| `name` | string | Display name for the account |
-| `provider` | string | Email provider (gmail, outlook, imap) |
+| `email` | string | The agent's email address |
+| `name` | string | Display name (e.g., "Support Agent", "Booking Assistant") |
+| `provider` | string | Email provider (gmail, outlook, imap, jasni) |
 | `status` | string | Connection status (active, error, disconnected) |
-| `created_at` | datetime | When the inbox was connected |
+| `created_at` | datetime | When the inbox was created |
 
 ## Folders
 
@@ -43,39 +43,44 @@ Each inbox contains standard email folders:
 
 | Folder | Description |
 |--------|-------------|
-| `INBOX` | Incoming emails |
-| `Sent` | Sent emails |
+| `INBOX` | Incoming emails your agent can process |
+| `Sent` | Emails your agent has sent |
 | `Drafts` | Draft emails |
 | `Trash` | Deleted emails |
 | `Spam` / `Junk` | Spam folder |
 
 <Tip>
-  Folder names may vary by provider. Jasni normalizes common folders, but custom folders use their original names.
+  Folder names may vary by provider. Jasni normalizes common folders, but custom folders retain their original names.
 </Tip>
 
-## Multiple Inboxes
+## Multiple Agents, Multiple Inboxes
 
-You can connect multiple inboxes to your Jasni account. When making API calls, specify which inbox to use with the `account` parameter:
+You can create dedicated inboxes for different agents or purposes. Specify which inbox to use with the `account` parameter:
 
 ```bash
-GET /api/v1/emails?account=support@yourcompany.com&folder=INBOX
+# Support agent inbox
+GET /api/v1/emails?account=support-agent@yourcompany.com&folder=INBOX
 ```
 
 ```bash
-GET /api/v1/emails?account=sales@yourcompany.com&folder=INBOX
+# Sales agent inbox
+GET /api/v1/emails?account=sales-agent@yourcompany.com&folder=INBOX
 ```
 
 ## Use Cases
 
 <AccordionGroup>
-  <Accordion title="Centralized Support" icon="headset">
-    Connect your support@, help@, and info@ addresses to manage all customer inquiries from one place.
+  <Accordion title="Dedicated Agent Identities" icon="robot">
+    Give each AI agent its own email address so it can build relationships, maintain context, and communicate independently.
   </Accordion>
-  <Accordion title="Multi-Brand Management" icon="building">
-    Manage emails for multiple brands or products, each with their own inbox.
+  <Accordion title="Specialized Agents" icon="users">
+    Create purpose-specific agents: support-agent@, booking-agent@, research-agent@—each handling their domain autonomously.
   </Accordion>
-  <Accordion title="Department Routing" icon="users">
-    Connect department-specific inboxes (sales@, support@, billing@) and route based on the destination.
+  <Accordion title="Multi-Agent Collaboration" icon="arrows-split-up-and-left">
+    Enable multiple agents to communicate with each other via email, coordinating on complex tasks.
+  </Accordion>
+  <Accordion title="Service Integration" icon="plug">
+    Let your agents interact with external services that use email as their interface—confirmations, notifications, approvals.
   </Accordion>
 </AccordionGroup>
 
@@ -86,6 +91,6 @@ GET /api/v1/emails?account=sales@yourcompany.com&folder=INBOX
     Learn about email messages
   </Card>
   <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Send your first email
+    Give your agent an inbox
   </Card>
 </CardGroup>
