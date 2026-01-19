@@ -129,6 +129,51 @@ Triggered when an email is successfully sent via the API.
 
 ---
 
+## email.delivered
+
+Triggered when an email is successfully delivered to the recipient's mail server.
+
+### Payload
+
+```json
+{
+  "event": "email.delivered",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "data": {
+    "id": "<delivered123@domain.com>",
+    "messageId": "<delivered123@domain.com>",
+    "from": "you@domain.com",
+    "to": ["recipient@example.com"],
+    "subject": "Hello from Jasni!",
+    "account": "you@domain.com",
+    "deliveredAt": "2024-01-15T10:30:05.000Z",
+    "smtpResponse": "250 2.0.0 OK"
+  }
+}
+```
+
+### Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Email Message-ID |
+| `messageId` | string | RFC 2822 Message-ID |
+| `from` | string | Sender address |
+| `to` | string[] | Recipients |
+| `subject` | string | Email subject |
+| `account` | string | Sending account |
+| `deliveredAt` | string | Delivery timestamp |
+| `smtpResponse` | string | SMTP server response |
+
+### Use Cases
+
+- Delivery confirmation tracking
+- SLA monitoring
+- Analytics and reporting
+- Delivery rate optimization
+
+---
+
 ## email.bounced
 
 Triggered when an email fails to deliver (bounce).
@@ -146,6 +191,7 @@ Triggered when an email fails to deliver (bounce).
     "to": ["invalid@example.com"],
     "subject": "Original subject",
     "account": "you@domain.com",
+    "bounceType": "hard",
     "bounceReason": "550 5.1.1 User unknown"
   }
 }
@@ -161,6 +207,7 @@ Triggered when an email fails to deliver (bounce).
 | `to` | string[] | Failed recipients |
 | `subject` | string | Original subject |
 | `account` | string | Sending account |
+| `bounceType` | string | Type: "hard" or "soft" |
 | `bounceReason` | string | Bounce error message |
 
 ### Use Cases
@@ -173,7 +220,7 @@ Triggered when an email fails to deliver (bounce).
 
 ## email.spam
 
-Triggered when an email is identified or marked as spam.
+Triggered when a recipient marks your email as spam (complaint).
 
 ### Payload
 
@@ -182,13 +229,14 @@ Triggered when an email is identified or marked as spam.
   "event": "email.spam",
   "timestamp": "2024-01-15T10:30:00.000Z",
   "data": {
-    "id": "67890",
-    "messageId": "<spam456@spammer.com>",
-    "from": "spammer@suspicious.com",
-    "to": ["you@domain.com"],
-    "subject": "You've won!!!",
+    "id": "<complained123@domain.com>",
+    "messageId": "<complained123@domain.com>",
+    "from": "you@domain.com",
+    "to": ["recipient@example.com"],
+    "subject": "Your Newsletter",
     "account": "you@domain.com",
-    "folder": "Spam"
+    "complainedAt": "2024-01-15T10:30:00.000Z",
+    "feedbackType": "abuse"
   }
 }
 ```
@@ -197,19 +245,66 @@ Triggered when an email is identified or marked as spam.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `id` | string | Email UID |
+| `id` | string | Email Message-ID |
 | `messageId` | string | Message-ID |
 | `from` | string | Sender address |
-| `to` | string[] | Recipients |
+| `to` | string[] | Recipients who complained |
 | `subject` | string | Email subject |
-| `account` | string | Your email account |
-| `folder` | string | Spam folder name |
+| `account` | string | Sending account |
+| `complainedAt` | string | Complaint timestamp |
+| `feedbackType` | string | Feedback type (abuse, fraud, etc.) |
 
 ### Use Cases
 
-- Spam analytics
-- Security monitoring
-- Training spam filters
+- Unsubscribe complainers automatically
+- Monitor sender reputation
+- Compliance tracking
+- Improve email content
+
+---
+
+## email.rejected
+
+Triggered when an email is rejected before delivery (e.g., policy violation, spam filter).
+
+### Payload
+
+```json
+{
+  "event": "email.rejected",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "data": {
+    "id": "<rejected123@domain.com>",
+    "messageId": "<rejected123@domain.com>",
+    "from": "you@domain.com",
+    "to": ["recipient@example.com"],
+    "subject": "Rejected Email",
+    "account": "you@domain.com",
+    "rejectionReason": "Policy violation: suspected spam content",
+    "rejectionCode": "550"
+  }
+}
+```
+
+### Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Email Message-ID |
+| `messageId` | string | RFC 2822 Message-ID |
+| `from` | string | Sender address |
+| `to` | string[] | Intended recipients |
+| `subject` | string | Email subject |
+| `account` | string | Sending account |
+| `rejectionReason` | string | Reason for rejection |
+| `rejectionCode` | string | SMTP rejection code |
+
+### Use Cases
+
+- Monitor policy violations
+- Debug delivery issues
+- Improve email content
+- Alert on suspicious activity
 
 ---
 
@@ -245,12 +340,56 @@ Triggered when an email is deleted via the API.
 
 ---
 
+## domain.verified
+
+Triggered when a custom domain is successfully verified.
+
+### Payload
+
+```json
+{
+  "event": "domain.verified",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "data": {
+    "domain": "example.com",
+    "verifiedAt": "2024-01-15T10:30:00.000Z",
+    "dnsRecords": {
+      "mx": true,
+      "spf": true,
+      "dkim": true,
+      "dmarc": true
+    }
+  }
+}
+```
+
+### Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `domain` | string | Verified domain name |
+| `verifiedAt` | string | Verification timestamp |
+| `dnsRecords` | object | DNS verification status |
+| `dnsRecords.mx` | boolean | MX record verified |
+| `dnsRecords.spf` | boolean | SPF record verified |
+| `dnsRecords.dkim` | boolean | DKIM record verified |
+| `dnsRecords.dmarc` | boolean | DMARC record verified |
+
+### Use Cases
+
+- Notify users when domain setup is complete
+- Trigger onboarding workflows
+- Enable domain-specific features
+- Analytics tracking
+
+---
+
 ## Example Handler
 
 Handle all events in one endpoint:
 
 ```javascript
-app.post('/webhooks/jasni', (req, res) => {
+app.post('/webhooks/jasni', async (req, res) => {
   const { event, timestamp, data } = req.body;
   
   console.log(`[${timestamp}] ${event}`);
@@ -266,19 +405,34 @@ app.post('/webhooks/jasni', (req, res) => {
       await logSentEmail(data);
       break;
       
+    case 'email.delivered':
+      // Email delivered to recipient server
+      await confirmDelivery(data);
+      break;
+      
     case 'email.bounced':
       // Email failed to deliver
       await handleBounce(data);
       break;
       
     case 'email.spam':
-      // Spam detected
-      await logSpam(data);
+      // Recipient marked as spam
+      await handleComplaint(data);
+      break;
+      
+    case 'email.rejected':
+      // Email rejected before delivery
+      await handleRejection(data);
       break;
       
     case 'email.deleted':
       // Email deleted
       await syncDeletion(data);
+      break;
+      
+    case 'domain.verified':
+      // Custom domain verified
+      await notifyDomainVerified(data);
       break;
       
     default:

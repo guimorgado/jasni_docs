@@ -722,7 +722,50 @@
           }
         }
       }
+    },
+    "/webhooks/{id}": {
+      "get": {
+        "operationId": "getWebhook",
+        "summary": "Get webhook",
+        "description": "Retrieve a specific webhook by ID",
+        "tags": ["Webhooks"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Webhook ID",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Webhook details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Webhook not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
+      }
   },
   "components": {
     "securitySchemes": {
@@ -1288,7 +1331,7 @@
             "type": "array",
             "items": {
               "type": "string",
-              "enum": ["email.received", "email.sent", "email.bounced", "email.spam", "email.deleted"]
+              "enum": ["email.received", "email.sent", "email.delivered", "email.bounced", "email.spam", "email.rejected", "email.deleted", "domain.verified"]
             }
           },
           "active": {
@@ -1344,7 +1387,7 @@
             "type": "array",
             "items": {
               "type": "string",
-              "enum": ["email.received", "email.sent", "email.bounced", "email.spam", "email.deleted"]
+              "enum": ["email.received", "email.sent", "email.delivered", "email.bounced", "email.spam", "email.rejected", "email.deleted", "domain.verified"]
             },
             "minItems": 1,
             "description": "Events to subscribe to"
@@ -1373,7 +1416,7 @@
             "type": "array",
             "items": {
               "type": "string",
-              "enum": ["email.received", "email.sent", "email.bounced", "email.spam", "email.deleted"]
+              "enum": ["email.received", "email.sent", "email.delivered", "email.bounced", "email.spam", "email.rejected", "email.deleted", "domain.verified"]
             },
             "minItems": 1,
             "description": "New events to subscribe to"
@@ -1411,7 +1454,7 @@
         "properties": {
           "event": {
             "type": "string",
-            "enum": ["email.received", "email.sent", "email.bounced", "email.spam", "email.deleted"]
+            "enum": ["email.received", "email.sent", "email.delivered", "email.bounced", "email.spam", "email.rejected", "email.deleted", "domain.verified"]
           },
           "timestamp": {
             "type": "string",

@@ -89,6 +89,7 @@
             "group": "Webhooks",
             "pages": [
               "api-reference/webhooks/list",
+              "api-reference/webhooks/get",
               "api-reference/webhooks/create",
               "api-reference/webhooks/update",
               "api-reference/webhooks/delete"
