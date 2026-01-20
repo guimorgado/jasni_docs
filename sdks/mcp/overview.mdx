@@ -1,0 +1,135 @@
+---
+title: "MCP Server"
+description: "Give AI assistants like Claude direct email access via Model Context Protocol"
+icon: "/icons-svg/robot.svg"
+---
+
+The Jasni MCP Server allows AI assistants like Claude, Cursor, and other MCP-compatible clients to manage email accounts directly.
+
+## What is MCP?
+
+[Model Context Protocol (MCP)](https://modelcontextprotocol.io) is an open standard that enables AI assistants to interact with external tools and data sources. With the Jasni MCP Server, your AI assistant can send, read, and manage emails autonomously.
+
+## Installation
+
+### Cursor
+
+Add to `~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "jasni": {
+      "command": "npx",
+      "args": ["-y", "@jasni/mcp-server"],
+      "env": {
+        "JASNI_API_KEY": "jsk_your_api_key"
+      }
+    }
+  }
+}
+```
+
+Then restart Cursor.
+
+### Claude Desktop
+
+Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+```json
+{
+  "mcpServers": {
+    "jasni": {
+      "command": "npx",
+      "args": ["-y", "@jasni/mcp-server"],
+      "env": {
+        "JASNI_API_KEY": "jsk_your_api_key"
+      }
+    }
+  }
+}
+```
+
+Then restart Claude Desktop.
+
+## Available Tools
+
+Once configured, your AI assistant has access to these email tools:
+
+### Account Management
+
+| Tool | Description |
+|------|-------------|
+| `list_accounts` | List all email accounts |
+| `create_account` | Create a new email account |
+| `delete_account` | Delete an email account |
+
+### Email Operations
+
+| Tool | Description |
+|------|-------------|
+| `list_emails` | List emails from inbox |
+| `get_email` | Read a specific email |
+| `send_email` | Send a new email |
+| `reply_email` | Reply to an email |
+| `forward_email` | Forward an email |
+| `delete_email` | Delete an email |
+| `mark_email` | Mark as read/unread |
+
+### Labels
+
+| Tool | Description |
+|------|-------------|
+| `list_labels` | List all labels |
+| `create_label` | Create a new label |
+| `add_email_labels` | Add labels to an email |
+| `remove_email_labels` | Remove labels from an email |
+
+### Webhooks
+
+| Tool | Description |
+|------|-------------|
+| `list_webhooks` | List all webhooks |
+| `create_webhook` | Create a webhook |
+| `update_webhook` | Update a webhook |
+| `delete_webhook` | Delete a webhook |
+
+## Example Prompts
+
+Once the MCP server is connected, you can ask your AI assistant:
+
+- "List my email accounts"
+- "Show me my latest 10 emails"
+- "Send an email to john@example.com about the meeting tomorrow"
+- "Reply to the last email saying thanks for the information"
+- "Forward that email to my team"
+- "Create a label called 'Important' with a red color"
+- "Mark that email as read"
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `JASNI_API_KEY` | Yes | - | Your Jasni API key |
+| `JASNI_API_URL` | No | `https://api.jasni.ai` | Custom API URL |
+
+## Troubleshooting
+
+### Server not appearing in Cursor/Claude
+
+1. Verify your `mcp.json` or config file is valid JSON
+2. Ensure the API key is correct and starts with `jsk_`
+3. Restart the application completely
+
+### Permission errors
+
+Make sure you have `npx` available in your PATH. You can test by running:
+
+```bash
+npx -v
+```
+
+### API errors
+
+Check that your API key has the necessary permissions in the Jasni dashboard.
+

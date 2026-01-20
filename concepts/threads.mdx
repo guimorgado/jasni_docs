@@ -5,9 +5,18 @@ description: "Group related messages into conversations"
 icon: "/icons-svg/reply.svg"
 ---
 
-## Overview
-
 A thread (or conversation) is a group of related messages linked together by their reply chain. When you reply to an email, Jasni automatically maintains proper threading so messages appear grouped in the recipient's email client.
+
+## Properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `threadId` | string | Unique identifier for the thread (root Message-ID) |
+| `subject` | string | Thread subject line |
+| `messageCount` | integer | Number of messages in the thread |
+| `participants` | object[] | All participants in the conversation |
+| `lastMessageDate` | string | Date of the most recent message (ISO 8601) |
+| `emails` | object[] | All messages in the thread (when fetching full thread) |
 
 ## How Threading Works
 
@@ -21,117 +30,186 @@ Email threading relies on three headers:
 
 When you use Jasni's reply or forward endpoints, these headers are automatically set correctly.
 
-## Replying to Messages
+## Fetching Threads
 
-Reply to a message with proper threading:
+List threads for an inbox with the `account` parameter:
 
-```json
-POST /api/v1/emails/123/reply?account=you@domain.com
-{
-  "text": "Thanks for your message!",
-  "replyAll": false,
-  "includeOriginal": true
-}
+```bash
+GET /api/v1/emails/threads?account=support-agent@jasnimail.com
 ```
 
-Jasni automatically:
-- Sets the correct `In-Reply-To` and `References` headers
-- Determines the correct recipients
-- Adds `Re:` prefix to the subject
-- Quotes the original message (if `includeOriginal` is true)
-
-### Reply vs Reply All
-
-| Option | Behavior |
-|--------|----------|
-| `replyAll: false` | Reply only to the sender |
-| `replyAll: true` | Reply to sender and all CC recipients |
-
-## Forwarding Messages
-
-Forward a message to new recipients:
-
-```json
-POST /api/v1/emails/123/forward?account=you@domain.com
-{
-  "to": ["colleague@example.com"],
-  "text": "FYI - see below"
-}
+```bash
+GET /api/v1/emails/threads?account=sales-agent@jasnimail.com&folder=INBOX&limit=50
 ```
 
-Forwarded emails:
-- Maintain the original thread context
-- Add `Fwd:` prefix to the subject
-- Include the original message content
+## SDK Usage
 
-## Thread Structure Example
+Manage threads programmatically using the Jasni SDKs.
 
-```
-Thread: "Project Update"
-├── Message 1: "Project Update" (from: alice@...)
-│   └── Message 2: "Re: Project Update" (from: bob@...)
-│       └── Message 3: "Re: Project Update" (from: alice@...)
-│           └── Message 4: "Re: Project Update" (from: charlie@...)
-```
-
-Each reply links back to its parent via `In-Reply-To`, and contains the full chain in `References`.
-
-## Building Thread Views
-
-To display a conversation view in your application:
-
-1. Fetch messages from a folder
-2. Group messages by their `References` or root `Message-ID`
-3. Sort within each group by date
-
-```javascript
-// Example: Group messages into threads
-function groupIntoThreads(messages) {
-  const threads = new Map();
-  
-  for (const message of messages) {
-    // Get the root message ID from References or use Message-ID
-    const threadId = message.references?.[0] || message.messageId;
+<Tabs>
+  <Tab title="TypeScript">
+    **List Threads**
     
-    if (!threads.has(threadId)) {
-      threads.set(threadId, []);
+    Retrieve all threads from an inbox:
+    
+    ```typescript
+    import { Jasni } from 'jasni-sdk'
+    
+    const jasni = new Jasni('jsk_your_api_key')
+    
+    const { threads, totalThreads } = await jasni.emails.listThreads({
+      account: 'support-agent@jasnimail.com',
+      folder: 'INBOX',
+      limit: 100,
+    })
+    
+    console.log(`Found ${totalThreads} threads:`)
+    for (const thread of threads) {
+      console.log(`- ${thread.subject} (${thread.messageCount} messages)`)
     }
-    threads.get(threadId).push(message);
-  }
+    ```
+    
+    **Get Thread**
+    
+    Retrieve all messages in a specific thread:
+    
+    ```typescript
+    const thread = await jasni.emails.getThread('<message-id@example.com>', {
+      account: 'support-agent@jasnimail.com',
+    })
+    
+    console.log(`Thread: ${thread.subject}`)
+    console.log(`Participants: ${thread.participants.map(p => p.address).join(', ')}`)
+    
+    for (const email of thread.emails) {
+      console.log(`- ${email.from.address}: ${email.subject}`)
+    }
+    ```
+    
+    **Reply to Thread**
+    
+    Reply to the latest message in a thread:
+    
+    ```typescript
+    const result = await jasni.emails.reply(123, {
+      account: 'support-agent@jasnimail.com',
+      text: 'Thanks for your message!',
+      replyAll: false,
+      includeOriginal: true,
+    })
+    console.log('Replied with ID:', result.messageId)
+    ```
+    
+    | Parameter | Type | Required | Description |
+    |-----------|------|----------|-------------|
+    | `text` | `string` | No | Plain text reply body |
+    | `html` | `string` | No | HTML reply body |
+    | `replyAll` | `boolean` | No | Reply to all recipients. Default: false |
+    | `includeOriginal` | `boolean` | No | Include original message. Default: true |
+    
+    **Forward Thread Message**
+    
+    Forward a message from a thread to new recipients:
+    
+    ```typescript
+    const result = await jasni.emails.forward(123, {
+      account: 'support-agent@jasnimail.com',
+      to: 'colleague@example.com',
+      text: 'FYI - see the conversation below',
+    })
+    ```
+    
+  </Tab>
   
-  // Sort messages within each thread by date
-  for (const thread of threads.values()) {
-    thread.sort((a, b) => new Date(a.date) - new Date(b.date));
-  }
-  
-  return threads;
-}
-```
-
-## Best Practices
-
-<AccordionGroup>
-  <Accordion title="Always use the reply endpoint" icon="reply">
-    Don't manually construct reply headers. Use the `/reply` endpoint to ensure proper threading.
-  </Accordion>
-  <Accordion title="Preserve subject lines" icon="heading">
-    Avoid changing the subject line in replies, as some email clients use the subject for threading.
-  </Accordion>
-  <Accordion title="Include original context" icon="quote-left">
-    When replying, set `includeOriginal: true` to quote the original message for context.
-  </Accordion>
-</AccordionGroup>
+  <Tab title="Python">
+    **List Threads**
+    
+    Retrieve all threads from an inbox:
+    
+    ```python
+    from jasni import Jasni
+    
+    jasni = Jasni("jsk_your_api_key")
+    
+    result = jasni.emails.list_threads(
+        account="support-agent@jasnimail.com",
+        folder="INBOX",
+        limit=100
+    )
+    
+    print(f"Found {result.total_threads} threads:")
+    for thread in result.threads:
+        print(f"- {thread.subject} ({thread.message_count} messages)")
+    ```
+    
+    **Get Thread**
+    
+    Retrieve all messages in a specific thread:
+    
+    ```python
+    thread = jasni.emails.get_thread(
+        "<message-id@example.com>",
+        account="support-agent@jasnimail.com"
+    )
+    
+    print(f"Thread: {thread.subject}")
+    participants = ", ".join(p.address for p in thread.participants)
+    print(f"Participants: {participants}")
+    
+    for email in thread.emails:
+        print(f"- {email.from_.address}: {email.subject}")
+    ```
+    
+    **Reply to Thread**
+    
+    Reply to the latest message in a thread:
+    
+    ```python
+    result = jasni.emails.reply(
+        123,
+        account="support-agent@jasnimail.com",
+        text="Thanks for your message!",
+        reply_all=False,
+        include_original=True
+    )
+    print(f"Replied with ID: {result.message_id}")
+    ```
+    
+    | Parameter | Type | Required | Description |
+    |-----------|------|----------|-------------|
+    | `text` | `str` | No | Plain text reply body |
+    | `html` | `str` | No | HTML reply body |
+    | `reply_all` | `bool` | No | Reply to all recipients. Default: False |
+    | `include_original` | `bool` | No | Include original message. Default: True |
+    
+    **Forward Thread Message**
+    
+    Forward a message from a thread to new recipients:
+    
+    ```python
+    result = jasni.emails.forward(
+        123,
+        account="support-agent@jasnimail.com",
+        to="colleague@example.com",
+        text="FYI - see the conversation below"
+    )
+    ```
+  </Tab>
+</Tabs>
 
 ## Related
 
 <CardGroup cols={2}>
-  <Card title="Messages" icon="envelope" href="/concepts/messages">
-    Learn about messages
+  <Card title="Messages" icon="/icons-svg/message.svg" href="/concepts/messages">
+    Learn about email messages
   </Card>
-  <Card title="Reply API" icon="reply" href="/api-reference/emails/reply">
-    Reply endpoint
+  <Card title="TypeScript SDK" icon="/icons-svg/code.svg" href="/sdks/typescript/emails">
+    Full TypeScript SDK reference for emails
   </Card>
-  <Card title="Forward API" icon="share" href="/api-reference/emails/forward">
-    Forward endpoint
+  <Card title="Python SDK" icon="/icons-svg/code.svg" href="/sdks/python/emails">
+    Full Python SDK reference for emails
+  </Card>
+  <Card title="Webhooks" icon="/icons-svg/webhook.svg" href="/concepts/webhooks">
+    Get notified of new messages
   </Card>
 </CardGroup>

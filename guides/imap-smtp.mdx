@@ -1,0 +1,250 @@
+---
+title: "IMAP & SMTP"
+description: "Configure IMAP and SMTP to access your Jasni inboxes using email clients or programmatic access"
+icon: "/icons-svg/server.svg"
+---
+
+Jasni supports standard IMAP and SMTP protocols, allowing you to connect using traditional email clients or integrate with existing systems that rely on these protocols.
+
+## What are IMAP and SMTP?
+
+**IMAP (Internet Message Access Protocol)** and **SMTP (Simple Mail Transfer Protocol)** are the standard protocols that power email communication across the internet.
+
+- **IMAP** is used to **read and manage emails**. It allows email clients to sync with a mail server, keeping your messages organized across multiple devices. When you check your inbox in Outlook or Thunderbird, you're using IMAP.
+
+- **SMTP** is used to **send emails**. When you hit "Send" on an email, SMTP handles delivering that message to the recipient's mail server.
+
+### Why Use IMAP/SMTP with Jasni?
+
+- **Email Client Integration**: Connect Outlook, Thunderbird, Apple Mail, or any IMAP/SMTP-compatible client to your Jasni inbox
+- **Programmatic Access**: Send and receive emails using standard libraries (like Python's `imaplib` or `smtplib`) in any programming language
+- **Legacy System Integration**: Bridge Jasni with existing systems that only support IMAP/SMTP protocols
+- **Familiar Tooling**: Use email tools you already know during development and testing
+
+## Finding Your Credentials
+
+Before configuring IMAP or SMTP, you'll need your account credentials from the [Jasni Dashboard](https://app.jasni.ai):
+
+<Steps>
+  <Step title="Get Your Account Email (Username)">
+    Navigate to **Dashboard → Accounts** and find the email address of your account (e.g., `agent@yourdomain.com`). This will be your username for IMAP/SMTP authentication.
+  </Step>
+  <Step title="Get Your Account Password">
+    Use the password you set when creating the account. This is the same password used for mail authentication.
+  </Step>
+</Steps>
+
+## IMAP Configuration
+
+Use IMAP to read emails from your Jasni inbox.
+
+<Callout intent="warning" title="SSL/TLS Recommended">
+  SSL/TLS is strongly recommended for all IMAP connections to protect your credentials. Use port **993** with SSL/TLS enabled in your email client settings.
+</Callout>
+
+| Setting      | Value                                           |
+| ------------ | ----------------------------------------------- |
+| **Host**     | `mail.jasnimail.com`                            |
+| **Port**     | `993` (SSL/TLS) or `143` (unencrypted)          |
+| **Username** | Your account email (e.g., `agent@yourdomain.com`) |
+| **Password** | Your account password                           |
+| **SSL/TLS**  | **Recommended** (use port 993)                  |
+
+<Callout intent="tip" title="Folder Support">
+  The following folders are available via IMAP: **INBOX**, **Drafts**, **Sent**, **Trash**, and **Spam**.
+</Callout>
+
+### Python IMAP Example
+
+```python
+import imaplib
+import os
+import email
+
+# Your credentials from Jasni Dashboard
+account_email = "agent@yourdomain.com"  # From Dashboard → Accounts
+account_password = os.getenv("MAIL_PASSWORD")  # Your account password
+
+# Connect with SSL (recommended)
+imap = imaplib.IMAP4_SSL("mail.jasnimail.com", 993)
+
+try:
+    # Authenticate using account email and password
+    imap.login(account_email, account_password)
+
+    # Select a folder (INBOX, Drafts, Sent, Trash, or Spam)
+    imap.select("INBOX")
+
+    # Search for all messages
+    status, message_ids = imap.search(None, "ALL")
+
+    if status == "OK":
+        for msg_id in message_ids[0].split():
+            # Fetch message
+            status, msg_data = imap.fetch(msg_id, "(RFC822)")
+            if status == "OK":
+                email_body = msg_data[0][1]
+                message = email.message_from_bytes(email_body)
+                print(f"Subject: {message['subject']}")
+finally:
+    imap.logout()
+```
+
+### TypeScript IMAP Example
+
+```typescript
+import Imap from "imap";
+
+// Your credentials from Jasni Dashboard
+const accountEmail = "agent@yourdomain.com"; // From Dashboard → Accounts
+const accountPassword = process.env.MAIL_PASSWORD!; // Your account password
+
+const imap = new Imap({
+  user: accountEmail,
+  password: accountPassword,
+  host: "mail.jasnimail.com",
+  port: 993,
+  tls: true, // SSL recommended
+});
+
+imap.once("ready", () => {
+  // Available folders: INBOX, Drafts, Sent, Trash, Spam
+  imap.openBox("INBOX", false, (err, box) => {
+    if (err) throw err;
+    console.log(`${box.messages.total} messages in INBOX`);
+    imap.end();
+  });
+});
+
+imap.once("error", (err: Error) => {
+  console.error("IMAP error:", err.message);
+});
+
+imap.connect();
+```
+
+## SMTP Configuration
+
+Use SMTP to send emails from your Jasni account.
+
+<Callout intent="warning" title="SSL/TLS Recommended">
+  SSL/TLS is strongly recommended for all SMTP connections to protect your credentials. Use port **465** for SSL/TLS or port **587** for STARTTLS.
+</Callout>
+
+| Setting      | Value                                    |
+| ------------ | ---------------------------------------- |
+| **Host**     | `mail.jasnimail.com`                     |
+| **Port**     | `465` (SSL/TLS) or `587` (STARTTLS)      |
+| **Username** | Your account email                       |
+| **Password** | Your account password                    |
+| **SSL/TLS**  | **Recommended** (use port 465 or 587)    |
+
+<Callout intent="warning" title="From Address">
+  The "From" address in your email should match the email address of your account (e.g., `agent@yourdomain.com`). Using a different From address may result in delivery failures.
+</Callout>
+
+### SMTP Limits
+
+- **Max recipients**: 50 per email
+- **Max message size**: 25MB
+- **Session timeout**: 30 minutes
+
+### Python SMTP Example
+
+```python
+import smtplib
+import os
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+# Your credentials from Jasni Dashboard
+account_email = "agent@yourdomain.com"  # From Dashboard → Accounts
+account_password = os.getenv("MAIL_PASSWORD")  # Your account password
+
+# Create message
+msg = MIMEMultipart()
+msg["Subject"] = "Hello from Jasni"
+msg["From"] = account_email  # Use your account email as the From address
+msg["To"] = "recipient@example.com"
+msg.attach(MIMEText("This is a test email sent via SMTP.", "plain"))
+
+# Connect with SSL (recommended) and send
+with smtplib.SMTP_SSL("mail.jasnimail.com", 465) as server:
+    server.login(account_email, account_password)
+    server.send_message(msg)
+    print("Email sent successfully!")
+```
+
+### TypeScript SMTP Example
+
+```typescript
+import nodemailer from "nodemailer";
+
+// Your credentials from Jasni Dashboard
+const accountEmail = "agent@yourdomain.com"; // From Dashboard → Accounts
+const accountPassword = process.env.MAIL_PASSWORD!; // Your account password
+
+const transporter = nodemailer.createTransport({
+  host: "mail.jasnimail.com",
+  port: 465,
+  secure: true, // SSL recommended
+  auth: {
+    user: accountEmail,
+    pass: accountPassword,
+  },
+});
+
+async function sendEmail() {
+  const info = await transporter.sendMail({
+    from: accountEmail, // Use your account email as the From address
+    to: "recipient@example.com",
+    subject: "Hello from Jasni",
+    text: "This is a test email sent via SMTP.",
+  });
+  console.log("Email sent:", info.messageId);
+}
+
+sendEmail().catch(console.error);
+```
+
+## Troubleshooting
+
+| Error                   | Cause                   | Solution                                                        |
+| ----------------------- | ----------------------- | --------------------------------------------------------------- |
+| "Authentication failed" | Invalid credentials     | Verify your account email and password from the dashboard       |
+| "Connection refused"    | Wrong port or host      | Use `mail.jasnimail.com` with port 993 (IMAP) or 465/587 (SMTP) |
+| "Connection timeout"    | Firewall blocking ports | Ensure ports 993, 143 (IMAP) and 465, 587 (SMTP) are open       |
+| "Sender not authorized" | Wrong From address      | Use your account's email address as the From address            |
+| "Folder not found"      | Invalid folder name     | Use one of: INBOX, Drafts, Sent, Trash, or Spam                 |
+
+## When to Use IMAP/SMTP vs API
+
+| Use Case                    | Recommendation |
+| --------------------------- | -------------- |
+| Email client integration    | IMAP/SMTP      |
+| Simple programmatic sending | SMTP           |
+| Full inbox management       | API            |
+| Real-time notifications     | API (Webhooks) |
+| Bulk operations             | API            |
+| Advanced email features     | API            |
+
+<Note>
+  For most agent use cases, we recommend using the [Jasni API](/api-reference/introduction) or [SDKs](/sdks/typescript/overview) as they provide a more robust and feature-rich experience. IMAP/SMTP are best suited for integrating with legacy systems or traditional email clients.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Sending & Receiving Email" icon="/icons-svg/send.svg" href="/guides/sending-receiving-email">
+    Learn to send and receive emails with the Jasni API
+  </Card>
+  <Card title="Webhooks" icon="/icons-svg/webhook.svg" href="/webhooks/overview">
+    Set up real-time email notifications
+  </Card>
+  <Card title="Custom Domains" icon="/icons-svg/world.svg" href="/guides/domains/creating-custom-domains">
+    Send emails from your own domain
+  </Card>
+  <Card title="API Reference" icon="/icons-svg/code.svg" href="/api-reference/introduction">
+    Explore the full Jasni API
+  </Card>
+</CardGroup>

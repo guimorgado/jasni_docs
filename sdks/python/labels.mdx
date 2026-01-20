@@ -81,7 +81,7 @@ Get labels assigned to a specific email:
 ```python
 result = jasni.emails.labels.list(
     uid=123,
-    account="me@mail.jasni.ai",
+    account="me@jasnimail.com",
     folder="INBOX",  # Optional
 )
 
@@ -121,7 +121,7 @@ Assign labels to an email:
 # Using label names (creates if they don't exist)
 result = jasni.emails.labels.assign(
     uid=123,
-    account="me@mail.jasni.ai",
+    account="me@jasnimail.com",
     labels=["Important", "Work"],
     agent_name="my-agent",  # Optional: for tracking
     metadata={"reason": "Auto-categorized"},  # Optional
@@ -130,7 +130,7 @@ result = jasni.emails.labels.assign(
 # Or using existing label IDs
 result = jasni.emails.labels.assign(
     uid=123,
-    account="me@mail.jasni.ai",
+    account="me@jasnimail.com",
     label_ids=["label-id-1", "label-id-2"],
 )
 
@@ -173,7 +173,7 @@ Remove labels from an email:
 ```python
 result = jasni.emails.labels.remove(
     uid=123,
-    account="me@mail.jasni.ai",
+    account="me@jasnimail.com",
     label_ids=["label-id-1", "label-id-2"],
 )
 
@@ -209,7 +209,7 @@ from jasni import Jasni
 jasni = Jasni("jsk_your_api_key")
 
 def label_workflow():
-    account = "me@mail.jasni.ai"
+    account = "me@jasnimail.com"
     
     # Create some labels
     important_result = jasni.labels.create(
@@ -314,7 +314,7 @@ from jasni import AsyncJasni
 
 async def label_workflow_async():
     jasni = AsyncJasni("jsk_your_api_key")
-    account = "me@mail.jasni.ai"
+    account = "me@jasnimail.com"
     
     # Create a label
     result = await jasni.labels.create(

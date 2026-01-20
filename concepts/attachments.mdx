@@ -5,78 +5,238 @@ description: "Send and receive files with your emails"
 icon: "/icons-svg/download.svg"
 ---
 
-## Overview
+Attachments allow you to receive and download files from your emails. Jasni supports all common file types and provides metadata about attachments when listing or reading emails.
 
-Attachments allow you to send and receive files with your emails. Jasni supports all common file types and provides metadata about attachments when listing or reading emails.
+<Warning>
+  **Sending Attachments**: Sending attachments via the API is coming soon. Currently, the send endpoint only supports text and HTML bodies. The examples below show the planned interface.
+</Warning>
 
-## Attachment Structure
+## Properties
 
-When you read an email, attachment metadata is included:
-
-| Field | Type | Description |
-|-------|------|-------------|
+| Property | Type | Description |
+|----------|------|-------------|
 | `filename` | string | Original filename |
 | `contentType` | string | MIME type (e.g., `application/pdf`) |
 | `size` | integer | File size in bytes |
 | `contentId` | string | Content-ID for inline attachments |
+| `content` | string | Base64 encoded file content (when fetched) |
 
-### Example Response
+## Fetching Attachments
 
-```json
-{
-  "uid": 123,
-  "subject": "Monthly Report",
-  "attachments": [
-    {
-      "filename": "report.pdf",
-      "contentType": "application/pdf",
-      "size": 245678
-    },
-    {
-      "filename": "data.xlsx",
-      "contentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "size": 89432
-    }
-  ]
-}
+Get all attachments from an email:
+
+```bash
+GET /api/v1/emails/123/attachments?account=support-agent@jasnimail.com
 ```
 
-## Sending Attachments
+Get a specific attachment by filename or index:
 
-Include attachments when sending an email:
-
-```json
-POST /api/v1/emails/send
-{
-  "from": "you@domain.com",
-  "to": ["recipient@example.com"],
-  "subject": "Document attached",
-  "text": "Please find the document attached.",
-  "attachments": [
-    {
-      "filename": "document.pdf",
-      "content": "base64_encoded_content_here",
-      "contentType": "application/pdf"
-    }
-  ]
-}
+```bash
+GET /api/v1/emails/123/attachments/document.pdf?account=support-agent@jasnimail.com
 ```
 
-<Warning>
-  Attachment content must be base64 encoded. Most SDKs handle this automatically.
-</Warning>
+```bash
+GET /api/v1/emails/123/attachments/0?account=support-agent@jasnimail.com
+```
 
-## Supported File Types
+## SDK Usage
 
-Jasni supports all standard MIME types:
+Manage attachments programmatically using the Jasni SDKs.
 
-| Category | Common Types |
-|----------|--------------|
-| Documents | PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX |
-| Images | PNG, JPG, GIF, SVG, WEBP |
-| Archives | ZIP, RAR, 7Z, TAR, GZ |
-| Text | TXT, CSV, JSON, XML, HTML |
-| Media | MP3, MP4, WAV, MOV |
+<Tabs>
+  <Tab title="TypeScript">
+    **Get All Attachments**
+    
+    Retrieve all attachments from an email with their content:
+    
+    ```typescript
+    import { Jasni } from 'jasni-sdk'
+    
+    const jasni = new Jasni('jsk_your_api_key')
+    
+    const { attachments } = await jasni.emails.getAttachments(123, {
+      account: 'support-agent@jasnimail.com',
+    })
+    
+    for (const att of attachments) {
+      console.log(`${att.filename}: ${att.contentType}, ${att.size} bytes`)
+      // att.content is base64 encoded
+    }
+    ```
+    
+    **Get Specific Attachment**
+    
+    Retrieve a single attachment by filename or index:
+    
+    ```typescript
+    // Get by filename
+    const { attachment } = await jasni.emails.getAttachment(123, {
+      account: 'support-agent@jasnimail.com',
+      attachment: 'document.pdf',
+    })
+    
+    // Get by index (0-based)
+    const { attachment: first } = await jasni.emails.getAttachment(123, {
+      account: 'support-agent@jasnimail.com',
+      attachment: 0,
+    })
+    
+    console.log(attachment.filename, attachment.size)
+    ```
+    
+    **Send Email with Attachments**
+    
+    Send an email with file attachments:
+    
+    ```typescript
+    import { readFileSync } from 'fs'
+    
+    // Read file and convert to base64
+    const fileBuffer = readFileSync('./document.pdf')
+    const base64Content = fileBuffer.toString('base64')
+    
+    await jasni.emails.send({
+      from: 'support-agent@jasnimail.com',
+      to: 'customer@example.com',
+      subject: 'Document attached',
+      text: 'Please find the document attached.',
+      attachments: [
+        {
+          filename: 'document.pdf',
+          content: base64Content,
+          contentType: 'application/pdf',
+        },
+      ],
+    })
+    ```
+    
+    | Parameter | Type | Required | Description |
+    |-----------|------|----------|-------------|
+    | `filename` | `string` | Yes | Name of the file |
+    | `content` | `string` | Yes | Base64 encoded file content |
+    | `contentType` | `string` | Yes | MIME type of the file |
+    | `contentId` | `string` | No | Content-ID for inline attachments |
+    
+    **Inline Attachments**
+    
+    Embed images in HTML emails:
+    
+    ```typescript
+    await jasni.emails.send({
+      from: 'support-agent@jasnimail.com',
+      to: 'customer@example.com',
+      subject: 'Welcome!',
+      html: '<p>See our logo:</p><img src="cid:logo123">',
+      attachments: [
+        {
+          filename: 'logo.png',
+          content: logoBase64,
+          contentType: 'image/png',
+          contentId: 'logo123',
+        },
+      ],
+    })
+    ```
+    
+  </Tab>
+  
+  <Tab title="Python">
+    **Get All Attachments**
+    
+    Retrieve all attachments from an email with their content:
+    
+    ```python
+    from jasni import Jasni
+    
+    jasni = Jasni("jsk_your_api_key")
+    
+    result = jasni.emails.get_attachments(
+        123,
+        account="support-agent@jasnimail.com"
+    )
+    
+    for att in result.attachments:
+        print(f"{att.filename}: {att.content_type}, {att.size} bytes")
+        # att.content is base64 encoded
+    ```
+    
+    **Get Specific Attachment**
+    
+    Retrieve a single attachment by filename or index:
+    
+    ```python
+    # Get by filename
+    result = jasni.emails.get_attachment(
+        123,
+        account="support-agent@jasnimail.com",
+        attachment="document.pdf"
+    )
+    
+    # Get by index (0-based)
+    result = jasni.emails.get_attachment(
+        123,
+        account="support-agent@jasnimail.com",
+        attachment=0
+    )
+    
+    print(result.attachment.filename, result.attachment.size)
+    ```
+    
+    **Send Email with Attachments**
+    
+    Send an email with file attachments:
+    
+    ```python
+    import base64
+    
+    # Read file and convert to base64
+    with open("document.pdf", "rb") as f:
+        content = base64.b64encode(f.read()).decode("utf-8")
+    
+    jasni.emails.send(
+        from_="support-agent@jasnimail.com",
+        to="customer@example.com",
+        subject="Document attached",
+        text="Please find the document attached.",
+        attachments=[
+            {
+                "filename": "document.pdf",
+                "content": content,
+                "contentType": "application/pdf",
+            },
+        ],
+    )
+    ```
+    
+    | Parameter | Type | Required | Description |
+    |-----------|------|----------|-------------|
+    | `filename` | `str` | Yes | Name of the file |
+    | `content` | `str` | Yes | Base64 encoded file content |
+    | `contentType` | `str` | Yes | MIME type of the file |
+    | `contentId` | `str` | No | Content-ID for inline attachments |
+    
+    **Inline Attachments**
+    
+    Embed images in HTML emails:
+    
+    ```python
+    jasni.emails.send(
+        from_="support-agent@jasnimail.com",
+        to="customer@example.com",
+        subject="Welcome!",
+        html='<p>See our logo:</p><img src="cid:logo123">',
+        attachments=[
+            {
+                "filename": "logo.png",
+                "content": logo_base64,
+                "contentType": "image/png",
+                "contentId": "logo123",
+            },
+        ],
+    )
+    ```
+  </Tab>
+</Tabs>
 
 ## Size Limits
 
@@ -89,106 +249,19 @@ Jasni supports all standard MIME types:
   For larger files, consider using a file sharing service and including a link in the email.
 </Note>
 
-## Inline Attachments
-
-Inline attachments (like images embedded in HTML) use the `contentId` field:
-
-```json
-{
-  "html": "<p>See the image below:</p><img src=\"cid:logo123\">",
-  "attachments": [
-    {
-      "filename": "logo.png",
-      "content": "base64_encoded_content",
-      "contentType": "image/png",
-      "contentId": "logo123"
-    }
-  ]
-}
-```
-
-The `cid:` prefix in the HTML references the `contentId` of the attachment.
-
-## Working with Attachments in SDKs
-
-### TypeScript SDK
-
-```typescript
-import { Jasni } from 'jasni-sdk'
-import { readFileSync } from 'fs'
-
-const jasni = new Jasni('jsk_your_api_key')
-
-// Read file and convert to base64
-const fileBuffer = readFileSync('./document.pdf')
-const base64Content = fileBuffer.toString('base64')
-
-await jasni.emails.send({
-  from: 'you@domain.com',
-  to: 'recipient@example.com',
-  subject: 'Document attached',
-  text: 'Please find the document attached.',
-  attachments: [
-    {
-      filename: 'document.pdf',
-      content: base64Content,
-      contentType: 'application/pdf'
-    }
-  ]
-})
-```
-
-### Python SDK
-
-```python
-from jasni import Jasni
-import base64
-
-jasni = Jasni('jsk_your_api_key')
-
-# Read file and convert to base64
-with open('document.pdf', 'rb') as f:
-    content = base64.b64encode(f.read()).decode('utf-8')
-
-jasni.emails.send(
-    from_='you@domain.com',
-    to='recipient@example.com',
-    subject='Document attached',
-    text='Please find the document attached.',
-    attachments=[
-        {
-            'filename': 'document.pdf',
-            'content': content,
-            'contentType': 'application/pdf'
-        }
-    ]
-)
-```
-
-## Best Practices
-
-<AccordionGroup>
-  <Accordion title="Validate file types" icon="shield-check">
-    Check file types before processing attachments to avoid security risks.
-  </Accordion>
-  <Accordion title="Scan for malware" icon="virus-slash">
-    If accepting attachments from external sources, consider scanning them for malware.
-  </Accordion>
-  <Accordion title="Use descriptive filenames" icon="file-signature">
-    Give attachments clear, descriptive names so recipients know what they're downloading.
-  </Accordion>
-  <Accordion title="Compress when possible" icon="file-zipper">
-    For multiple files, consider compressing them into a single ZIP archive.
-  </Accordion>
-</AccordionGroup>
-
 ## Related
 
 <CardGroup cols={2}>
-  <Card title="Messages" icon="envelope" href="/concepts/messages">
-    Learn about messages
+  <Card title="Messages" icon="/icons-svg/message.svg" href="/concepts/messages">
+    Learn about email messages
   </Card>
-  <Card title="Send API" icon="paper-plane" href="/api-reference/emails/send">
-    Send email endpoint
+  <Card title="TypeScript SDK" icon="/icons-svg/code.svg" href="/sdks/typescript/emails">
+    Full TypeScript SDK reference for emails
+  </Card>
+  <Card title="Python SDK" icon="/icons-svg/code.svg" href="/sdks/python/emails">
+    Full Python SDK reference for emails
+  </Card>
+  <Card title="Webhooks" icon="/icons-svg/webhook.svg" href="/concepts/webhooks">
+    Get notified of new messages
   </Card>
 </CardGroup>

@@ -1,0 +1,104 @@
+---
+title: "List Drafts"
+api: "GET /api/v1/emails/drafts"
+description: "Retrieve all draft emails for an account"
+---
+
+## Request
+
+<ParamField query="account" type="string" required>
+  Email account to fetch drafts from
+</ParamField>
+
+<ParamField query="limit" type="integer" default="50">
+  Maximum number of drafts to fetch
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="drafts" type="array">
+  List of draft email objects
+</ResponseField>
+
+<ResponseField name="total" type="integer">
+  Number of drafts returned
+</ResponseField>
+
+<ResponseField name="account" type="string">
+  The email account that was queried
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.jasni.ai/api/v1/emails/drafts?account=you@domain.com&limit=10" \
+  -H "Authorization: Bearer jsk_your_api_key"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.jasni.ai/api/v1/emails/drafts?account=you@domain.com&limit=10',
+  {
+    headers: {
+      'Authorization': 'Bearer jsk_your_api_key',
+    },
+  }
+);
+
+const data = await response.json();
+console.log(data.drafts);
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    'https://api.jasni.ai/api/v1/emails/drafts',
+    headers={'Authorization': 'Bearer jsk_your_api_key'},
+    params={
+        'account': 'you@domain.com',
+        'limit': 10
+    }
+)
+
+drafts = response.json()['drafts']
+for draft in drafts:
+    print(f"Draft: {draft['subject']}")
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "drafts": [
+    {
+      "uid": 1,
+      "messageId": "<draft-123@domain.com>",
+      "from": "you@domain.com",
+      "to": ["recipient@example.com"],
+      "subject": "Draft: Follow up",
+      "date": "2024-01-15T10:30:00Z",
+      "text": "Hi, I wanted to follow up on...",
+      "flags": ["\\Draft"]
+    }
+  ],
+  "total": 1,
+  "account": "you@domain.com"
+}
+```
+
+```json Error - Account not found
+{
+  "error": "Email account not found"
+}
+```
+</ResponseExample>
+
+## Notes
+
+- Drafts are fetched from the IMAP Drafts folder
+- Returns emails with the `\Draft` flag

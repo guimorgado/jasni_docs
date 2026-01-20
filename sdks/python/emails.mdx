@@ -12,7 +12,7 @@ Retrieve emails from a folder:
 
 ```python
 result = jasni.emails.list(
-    account="me@mail.jasni.ai",
+    account="me@jasnimail.com",
     folder="INBOX",  # Optional: default is INBOX
     limit=50,        # Optional: default is 50, max 100
 )
@@ -59,7 +59,7 @@ Retrieve a specific email by UID:
 ```python
 result = jasni.emails.get(
     uid=123,
-    account="me@mail.jasni.ai",
+    account="me@jasnimail.com",
     folder="INBOX",  # Optional
 )
 
@@ -99,7 +99,7 @@ Send a new email:
 
 ```python
 result = jasni.emails.send(
-    from_="me@mail.jasni.ai",
+    from_="me@jasnimail.com",
     to=["recipient@example.com"],
     subject="Hello!",
     text="Plain text body",
@@ -129,6 +129,10 @@ print(f"Message ID: {result.message_id}")
   You must provide at least `text` or `html` for the email body.
 </Note>
 
+<Warning>
+  **Attachments**: Sending attachments via the API is coming soon. See the [Attachments](/concepts/attachments) page for details on downloading attachments from received emails.
+</Warning>
+
 ### Response
 
 ```python
@@ -148,7 +152,7 @@ Reply to an existing email:
 ```python
 result = jasni.emails.reply(
     uid=123,
-    account="me@mail.jasni.ai",
+    account="me@jasnimail.com",
     text="Thanks for your email!",
     reply_all=False,         # Optional: default False
     include_original=True,   # Optional: default True
@@ -191,7 +195,7 @@ Forward an email to other recipients:
 ```python
 result = jasni.emails.forward(
     uid=123,
-    account="me@mail.jasni.ai",
+    account="me@jasnimail.com",
     to=["forward@example.com"],
     text="FYI - see below",    # Optional message
     cc=["cc@example.com"],     # Optional
@@ -233,7 +237,7 @@ class ForwardResponse:
 Delete an email:
 
 ```python
-jasni.emails.delete(uid=123, account="me@mail.jasni.ai")
+jasni.emails.delete(uid=123, account="me@jasnimail.com")
 ```
 
 ## Mark as Read/Unread
@@ -242,10 +246,10 @@ Update the read status of an email:
 
 ```python
 # Mark as read
-jasni.emails.mark_as_read(uid=123, account="me@mail.jasni.ai")
+jasni.emails.mark_as_read(uid=123, account="me@jasnimail.com")
 
 # Mark as unread
-jasni.emails.mark_as_unread(uid=123, account="me@mail.jasni.ai")
+jasni.emails.mark_as_unread(uid=123, account="me@jasnimail.com")
 ```
 
 ## Email Labels
@@ -266,7 +270,7 @@ from jasni import Jasni
 jasni = Jasni("jsk_your_api_key")
 
 def email_workflow():
-    account = "me@mail.jasni.ai"
+    account = "me@jasnimail.com"
     
     # List recent emails
     result = jasni.emails.list(account=account, limit=10)
@@ -311,7 +315,7 @@ from jasni import AsyncJasni
 
 async def email_workflow_async():
     jasni = AsyncJasni("jsk_your_api_key")
-    account = "me@mail.jasni.ai"
+    account = "me@jasnimail.com"
     
     # List recent emails
     result = await jasni.emails.list(account=account, limit=10)

@@ -1,0 +1,88 @@
+---
+title: "Delete Draft"
+api: "DELETE /api/v1/emails/drafts"
+description: "Delete a draft email"
+---
+
+## Request
+
+<ParamField query="account" type="string" required>
+  Email account
+</ParamField>
+
+<ParamField query="uid" type="string" required>
+  UID of the draft to delete
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the deletion was successful
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE "https://api.jasni.ai/api/v1/emails/drafts?account=you@domain.com&uid=123" \
+  -H "Authorization: Bearer jsk_your_api_key"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.jasni.ai/api/v1/emails/drafts?account=you@domain.com&uid=123',
+  {
+    method: 'DELETE',
+    headers: {
+      'Authorization': 'Bearer jsk_your_api_key',
+    },
+  }
+);
+
+const data = await response.json();
+console.log(data.message);
+```
+
+```python Python
+import requests
+
+response = requests.delete(
+    'https://api.jasni.ai/api/v1/emails/drafts',
+    headers={'Authorization': 'Bearer jsk_your_api_key'},
+    params={
+        'account': 'you@domain.com',
+        'uid': '123'
+    }
+)
+
+print(response.json()['message'])
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "message": "Draft deleted successfully"
+}
+```
+
+```json Error - Missing parameters
+{
+  "error": "Draft UID required"
+}
+```
+
+```json Error - Account not found
+{
+  "error": "Email account not found"
+}
+```
+</ResponseExample>
+
+## Notes
+
+- The draft is permanently deleted from the Drafts folder
+- This action cannot be undone

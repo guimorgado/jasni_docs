@@ -78,26 +78,6 @@ await jasni.emails.send({
 })
 ```
 
-### Adding Attachments
-
-Include attachments with your emails:
-
-```typescript
-await jasni.emails.send({
-  from: 'agent@yourdomain.com',
-  to: 'recipient@example.com',
-  subject: 'Report attached',
-  text: 'Please find the report attached.',
-  attachments: [
-    {
-      filename: 'report.pdf',
-      content: base64EncodedContent,
-      contentType: 'application/pdf'
-    }
-  ]
-})
-```
-
 ## Receiving Emails
 
 ### Listing Emails
@@ -107,17 +87,17 @@ Retrieve emails from an inbox:
 <Tabs>
   <Tab title="TypeScript SDK">
     ```typescript
-    const { emails, pagination } = await jasni.emails.list({
+    const { emails, total } = await jasni.emails.list({
       account: 'agent@yourdomain.com',
       folder: 'INBOX',
       limit: 20,
-      unreadOnly: true
     })
 
     for (const email of emails) {
       console.log(`From: ${email.from}`)
       console.log(`Subject: ${email.subject}`)
       console.log(`Date: ${email.date}`)
+      console.log(`Read: ${email.seen}`)
     }
     ```
   </Tab>
@@ -127,30 +107,133 @@ Retrieve emails from an inbox:
         account='agent@yourdomain.com',
         folder='INBOX',
         limit=20,
-        unread_only=True
     )
 
     for email in result.emails:
         print(f'From: {email.from_}')
         print(f'Subject: {email.subject}')
         print(f'Date: {email.date}')
+        print(f'Read: {email.seen}')
     ```
   </Tab>
 </Tabs>
 
+### Filtering by Labels
+
+Filter emails by labels to find categorized messages:
+
+<Tabs>
+  <Tab title="TypeScript SDK">
+    ```typescript
+    // Filter by label names
+    const { emails } = await jasni.emails.list({
+      account: 'agent@yourdomain.com',
+      labels: ['Important', 'Customer'],
+    })
+
+    // Filter by label IDs
+    const { emails } = await jasni.emails.list({
+      account: 'agent@yourdomain.com',
+      labelIds: ['label-id-1', 'label-id-2'],
+    })
+    ```
+  </Tab>
+  <Tab title="Python SDK">
+    ```python
+    # Filter by label names
+    result = jasni.emails.list(
+        account='agent@yourdomain.com',
+        labels=['Important', 'Customer'],
+    )
+
+    # Filter by label IDs
+    result = jasni.emails.list(
+        account='agent@yourdomain.com',
+        label_ids=['label-id-1', 'label-id-2'],
+    )
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+  When filtering by multiple labels, only emails that have **all** specified labels are returned.
+</Note>
+
 ### Getting a Specific Email
 
-Retrieve the full content of a single email:
+Retrieve the full content of a single email by its UID:
 
-```typescript
-const email = await jasni.emails.get({
-  account: 'agent@yourdomain.com',
-  messageId: '<abc123@example.com>'
-})
+<Tabs>
+  <Tab title="TypeScript SDK">
+    ```typescript
+    const { email } = await jasni.emails.get(123, {
+      account: 'agent@yourdomain.com',
+    })
 
-console.log('Body:', email.text || email.html)
-console.log('Attachments:', email.attachments?.length || 0)
-```
+    console.log('Subject:', email.subject)
+    console.log('Body:', email.text || email.html)
+    console.log('Attachments:', email.attachments?.length || 0)
+    ```
+  </Tab>
+  <Tab title="Python SDK">
+    ```python
+    result = jasni.emails.get(
+        uid=123,
+        account='agent@yourdomain.com',
+    )
+
+    print(f'Subject: {result.email.subject}')
+    print(f'Body: {result.email.text or result.email.html}')
+    print(f'Attachments: {len(result.email.attachments or [])}')
+    ```
+  </Tab>
+</Tabs>
+
+### Downloading Attachments
+
+Retrieve attachments from received emails:
+
+<Tabs>
+  <Tab title="TypeScript SDK">
+    ```typescript
+    // Get all attachments from an email
+    const { attachments } = await jasni.emails.getAttachments(123, {
+      account: 'agent@yourdomain.com',
+    })
+
+    for (const att of attachments) {
+      console.log(`${att.filename}: ${att.contentType}, ${att.size} bytes`)
+      // att.content is base64 encoded
+    }
+
+    // Get a specific attachment by filename
+    const { attachment } = await jasni.emails.getAttachment(123, {
+      account: 'agent@yourdomain.com',
+      attachment: 'document.pdf',
+    })
+    ```
+  </Tab>
+  <Tab title="Python SDK">
+    ```python
+    # Get all attachments from an email
+    result = jasni.emails.get_attachments(
+        123,
+        account='agent@yourdomain.com',
+    )
+
+    for att in result.attachments:
+        print(f'{att.filename}: {att.content_type}, {att.size} bytes')
+        # att.content is base64 encoded
+
+    # Get a specific attachment by filename
+    result = jasni.emails.get_attachment(
+        123,
+        account='agent@yourdomain.com',
+        attachment='document.pdf',
+    )
+    ```
+  </Tab>
+</Tabs>
 
 ### Real-Time Email Reception
 
@@ -168,31 +251,244 @@ const webhook = await jasni.webhooks.create({
   See the [Webhooks Overview](/webhooks/overview) for detailed information on setting up real-time notifications.
 </Info>
 
+## Email Threads
+
+Work with email conversations to maintain context:
+
+<Tabs>
+  <Tab title="TypeScript SDK">
+    ```typescript
+    // List all threads (conversations)
+    const { threads, totalThreads } = await jasni.emails.listThreads({
+      account: 'agent@yourdomain.com',
+      folder: 'INBOX',
+      limit: 100,
+    })
+
+    for (const thread of threads) {
+      console.log(`${thread.subject} (${thread.messageCount} messages)`)
+    }
+
+    // Get all emails in a specific thread
+    const thread = await jasni.emails.getThread('<message-id@example.com>', {
+      account: 'agent@yourdomain.com',
+    })
+
+    console.log(`Thread: ${thread.subject}`)
+    console.log(`Participants: ${thread.participants.map(p => p.address).join(', ')}`)
+
+    for (const email of thread.emails) {
+      console.log(`- ${email.from}: ${email.subject}`)
+    }
+    ```
+  </Tab>
+  <Tab title="Python SDK">
+    ```python
+    # List all threads (conversations)
+    result = jasni.emails.list_threads(
+        account='agent@yourdomain.com',
+        folder='INBOX',
+        limit=100,
+    )
+
+    for thread in result.threads:
+        print(f'{thread.subject} ({thread.message_count} messages)')
+
+    # Get all emails in a specific thread
+    thread = jasni.emails.get_thread(
+        '<message-id@example.com>',
+        account='agent@yourdomain.com',
+    )
+
+    print(f'Thread: {thread.subject}')
+    for email in thread.emails:
+        print(f'- {email.from_}: {email.subject}')
+    ```
+  </Tab>
+</Tabs>
+
+<Tip>
+  Email threads are essential for AI agents that need to understand conversation context before responding.
+</Tip>
+
 ## Replying to Emails
 
 Reply to an existing email thread:
 
-```typescript
-await jasni.emails.reply({
-  account: 'agent@yourdomain.com',
-  messageId: '<original-message-id@example.com>',
-  text: 'Thank you for your message. I will look into this.',
-  html: '<p>Thank you for your message. I will look into this.</p>'
-})
-```
+<Tabs>
+  <Tab title="TypeScript SDK">
+    ```typescript
+    const reply = await jasni.emails.reply(123, {
+      account: 'agent@yourdomain.com',
+      text: 'Thank you for your message. I will look into this.',
+      html: '<p>Thank you for your message. I will look into this.</p>',
+      replyAll: false,        // Reply only to sender
+      includeOriginal: true,  // Include original message
+    })
+
+    console.log('Reply sent:', reply.messageId)
+    ```
+  </Tab>
+  <Tab title="Python SDK">
+    ```python
+    reply = jasni.emails.reply(
+        123,
+        account='agent@yourdomain.com',
+        text='Thank you for your message. I will look into this.',
+        html='<p>Thank you for your message. I will look into this.</p>',
+        reply_all=False,        # Reply only to sender
+        include_original=True,  # Include original message
+    )
+
+    print(f'Reply sent: {reply.message_id}')
+    ```
+  </Tab>
+</Tabs>
 
 ## Forwarding Emails
 
 Forward an email to another recipient:
 
+<Tabs>
+  <Tab title="TypeScript SDK">
+    ```typescript
+    const forward = await jasni.emails.forward(123, {
+      account: 'agent@yourdomain.com',
+      to: 'colleague@example.com',
+      text: 'FYI - see the email below.',
+    })
+
+    console.log('Forwarded:', forward.messageId)
+    ```
+  </Tab>
+  <Tab title="Python SDK">
+    ```python
+    forward = jasni.emails.forward(
+        123,
+        account='agent@yourdomain.com',
+        to='colleague@example.com',
+        text='FYI - see the email below.',
+    )
+
+    print(f'Forwarded: {forward.message_id}')
+    ```
+  </Tab>
+</Tabs>
+
+## Managing Email Status
+
+Mark emails as read or unread:
+
+<Tabs>
+  <Tab title="TypeScript SDK">
+    ```typescript
+    // Mark as read
+    await jasni.emails.markAsRead(123, { account: 'agent@yourdomain.com' })
+
+    // Mark as unread
+    await jasni.emails.markAsUnread(123, { account: 'agent@yourdomain.com' })
+
+    // Delete an email
+    await jasni.emails.delete(123, { account: 'agent@yourdomain.com' })
+    ```
+  </Tab>
+  <Tab title="Python SDK">
+    ```python
+    # Mark as read
+    jasni.emails.mark_as_read(123, account='agent@yourdomain.com')
+
+    # Mark as unread
+    jasni.emails.mark_as_unread(123, account='agent@yourdomain.com')
+
+    # Delete an email
+    jasni.emails.delete(123, account='agent@yourdomain.com')
+    ```
+  </Tab>
+</Tabs>
+
+## Webhook Events
+
+Jasni provides several webhook events for email operations:
+
+| Event | Description |
+|-------|-------------|
+| `email.received` | New email arrived in inbox |
+| `email.sent` | Email sent successfully via API |
+| `email.delivered` | Email delivered to recipient's server |
+| `email.bounced` | Email failed to deliver |
+| `email.spam` | Recipient marked email as spam |
+| `email.rejected` | Email rejected before delivery |
+| `email.deleted` | Email deleted via API |
+
 ```typescript
-await jasni.emails.forward({
-  account: 'agent@yourdomain.com',
-  messageId: '<original-message-id@example.com>',
-  to: 'colleague@example.com',
-  text: 'FYI - see the email below.'
+// Subscribe to multiple events
+const webhook = await jasni.webhooks.create({
+  url: 'https://your-server.com/email-events',
+  events: ['email.received', 'email.bounced', 'email.spam'],
+  description: 'Email event handler'
 })
 ```
+
+<Info>
+  See the [Webhook Events](/webhooks/events) page for detailed payload structures.
+</Info>
+
+## Error Handling
+
+Handle errors gracefully in your integration:
+
+<Tabs>
+  <Tab title="TypeScript SDK">
+    ```typescript
+    import { Jasni, JasniError, AuthenticationError, RateLimitError } from 'jasni-sdk'
+
+    const jasni = new Jasni('jsk_your_api_key')
+
+    try {
+      const result = await jasni.emails.send({
+        from: 'agent@yourdomain.com',
+        to: 'recipient@example.com',
+        subject: 'Hello',
+        text: 'Message content',
+      })
+      console.log('Sent:', result.messageId)
+    } catch (error) {
+      if (error instanceof AuthenticationError) {
+        console.error('Invalid API key')
+      } else if (error instanceof RateLimitError) {
+        console.error('Rate limited, retry after:', error.retryAfter)
+      } else if (error instanceof JasniError) {
+        console.error('API error:', error.message)
+      } else {
+        throw error
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Python SDK">
+    ```python
+    from jasni import Jasni
+    from jasni.errors import JasniError, AuthenticationError, RateLimitError
+
+    jasni = Jasni('jsk_your_api_key')
+
+    try:
+        result = jasni.emails.send(
+            from_='agent@yourdomain.com',
+            to='recipient@example.com',
+            subject='Hello',
+            text='Message content',
+        )
+        print(f'Sent: {result.message_id}')
+    except AuthenticationError:
+        print('Invalid API key')
+    except RateLimitError as e:
+        print(f'Rate limited, retry after: {e.retry_after}')
+    except JasniError as e:
+        print(f'API error: {e.message}')
+    ```
+  </Tab>
+</Tabs>
 
 ## Best Practices
 
@@ -209,6 +505,12 @@ await jasni.emails.forward({
   <Accordion title="Validate email addresses">
     Always validate email addresses before sending to avoid bounces and protect your sender reputation.
   </Accordion>
+  <Accordion title="Use threads for context">
+    When building AI agents, use the threads API to understand conversation history before generating responses.
+  </Accordion>
+  <Accordion title="Handle bounces and complaints">
+    Subscribe to `email.bounced` and `email.spam` webhook events to maintain list hygiene and sender reputation.
+  </Accordion>
 </AccordionGroup>
 
 ## Next Steps
@@ -223,7 +525,7 @@ await jasni.emails.forward({
   <Card title="Attachments" icon="/icons-svg/download.svg" href="/concepts/attachments">
     Learn about handling attachments
   </Card>
-  <Card title="API Reference" icon="/icons-svg/docs.svg" href="/api-reference/emails/send">
-    Explore the full API
+  <Card title="Labels" icon="/icons-svg/label.svg" href="/concepts/labels">
+    Organize and categorize emails
   </Card>
 </CardGroup>

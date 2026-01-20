@@ -1,0 +1,106 @@
+---
+title: "Delete Account"
+api: "DELETE /api/v1/accounts"
+description: "Delete an email account"
+---
+
+## Request
+
+<ParamField query="email" type="string" required>
+  Email address of the account to delete
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the deletion was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="properties">
+    <ResponseField name="deleted_email" type="string">
+      The email address that was deleted
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE "https://api.jasni.ai/api/v1/accounts?email=agent@yourdomain.com" \
+  -H "Authorization: Bearer jsk_your_api_key"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.jasni.ai/api/v1/accounts?email=agent@yourdomain.com',
+  {
+    method: 'DELETE',
+    headers: {
+      'Authorization': 'Bearer jsk_your_api_key',
+    },
+  }
+);
+
+const data = await response.json();
+console.log(data.message);
+```
+
+```python Python
+import requests
+
+response = requests.delete(
+    'https://api.jasni.ai/api/v1/accounts',
+    headers={'Authorization': 'Bearer jsk_your_api_key'},
+    params={'email': 'agent@yourdomain.com'}
+)
+
+print(response.json()['message'])
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "data": {
+    "deleted_email": "agent@yourdomain.com"
+  },
+  "message": "Email account deleted successfully"
+}
+```
+
+```json Error - Not found
+{
+  "success": false,
+  "error": "Email account not found or not authorized"
+}
+```
+
+```json Error - Missing email
+{
+  "success": false,
+  "error": "Email parameter is required"
+}
+```
+</ResponseExample>
+
+<Warning>
+  **This action is permanent and cannot be undone.** All emails and associated data for this account will be deleted.
+</Warning>
+
+## Behavior
+
+When you delete an email account:
+
+1. **Email labels removed**: All label associations for emails in this account are deleted
+2. **Account removed**: The account is removed from your user profile
+3. **Mail server cleanup**: The mailbox is removed from the mail server
+
+## Notes
+
+- You can only delete accounts that belong to you
+- Consider archiving important emails before deletion

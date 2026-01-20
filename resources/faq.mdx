@@ -1,0 +1,85 @@
+---
+title: 'FAQ'
+description: 'Common questions about Jasni'
+icon: 'circle-question'
+---
+
+<AccordionGroup>
+  <Accordion title="What is Jasni?">
+    Jasni is an email infrastructure platform built specifically for AI agents. Unlike traditional email services designed for humans, Jasni gives each AI agent its own email identity: a dedicated inbox designed for autonomous operation.
+
+    With Jasni, your agents can send, receive, reply, and forward emails through a clean REST API. No IMAP connections, no SMTP configuration. Just simple HTTP requests that let you ship in hours, not weeks.
+  </Accordion>
+
+  <Accordion title="How is Jasni different from services like SendGrid or Mailgun?">
+    SendGrid and Mailgun are primarily transactional email services. They excel at sending large volumes of one-way emails (newsletters, notifications, marketing campaigns).
+
+    Jasni is built for **two-way autonomous communication**:
+
+    - **Full inbox management**: Your agents can receive, read, and respond to emails, not just send them
+    - **Agent-first design**: Purpose-built for AI agents with their own identity, not retrofitted human tools
+    - **Real-time webhooks**: Instant notifications when emails arrive, so your agents can react in seconds
+    - **Thread management**: Native support for email conversations, replies, and forwarding
+    - **Scale without infrastructure**: Spin up 10 or 1,000 inboxes with the same API call
+
+    Think of it this way: SendGrid/Mailgun is for *broadcasting*, Jasni is for *conversing*.
+  </Accordion>
+
+  <Accordion title="Can I use my own custom domain to send emails?">
+    Yes! You can configure custom domains so your AI agents send emails from addresses like `agent@yourdomain.com` instead of a generic address.
+
+    To set up a custom domain:
+
+    1. Go to **Domains** in your [dashboard](https://app.jasni.ai)
+    2. Add your domain and configure the required DNS records (SPF, DKIM, DMARC)
+    3. Verify your domain
+    4. Start sending from your branded addresses
+
+    Custom domains improve deliverability, build trust with recipients, and maintain your brand identity. See our [Custom Domains Guide](/guides/domains/creating-custom-domains) for detailed setup instructions.
+  </Accordion>
+
+  <Accordion title="What's the best way to process incoming emails?">
+    The recommended approach is to use **webhooks**. Instead of constantly polling for new emails, webhooks notify your agent instantly when something happens.
+
+    Here's how it works:
+
+    1. Register a webhook endpoint with the events you care about (e.g., `email.received`)
+    2. When an email arrives, Jasni sends a POST request to your endpoint with the full email data
+    3. Your agent processes the email and can respond immediately
+
+    This approach is resource-efficient (no wasted polling cycles), fast (reactions in seconds), and reliable (automatic retries if your endpoint fails).
+
+    Check out our [Webhooks Guide](/webhooks/overview) to get started.
+  </Accordion>
+
+  <Accordion title="How do I make sure I don't end up in spam?">
+    Email deliverability depends on proper authentication. Make sure you have configured:
+
+    1. **SPF (Sender Policy Framework)**: Authorizes Jasni to send emails on behalf of your domain
+    2. **DKIM (DomainKeys Identified Mail)**: Adds a digital signature to verify emails haven't been tampered with
+    3. **DMARC (Domain-based Message Authentication)**: Tells receiving servers how to handle emails that fail authentication
+
+    Additionally, follow these best practices:
+    - Verify your sending domain before sending
+    - Avoid spammy content and maintain list hygiene
+    - Start with a warm-up period for new domains
+    - Monitor your domain reputation
+
+    See our [SPF, DKIM, DMARC Guide](/resources/security/spf-dkim-dmarc) for detailed configuration instructions.
+  </Accordion>
+
+  <Accordion title="Do you have SDKs available?">
+    Yes! We provide official SDKs for:
+
+    - **[TypeScript/JavaScript](/sdks/typescript/overview)**: Full-featured SDK for Node.js and browser environments
+    - **[Python](/sdks/python/overview)**: Full-featured SDK with async support
+
+    We also offer an **[MCP Server](/sdks/mcp/overview)** that allows AI assistants like Claude to interact with email directly.
+
+    You can always use our REST API directly from any programming language if you prefer.
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+  Can't find what you're looking for? [Contact our support team](/resources/support) and we'll be happy to help.
+</Note>

@@ -2,7 +2,6 @@
 title: "Send Email"
 api: "POST /api/v1/emails/send"
 description: "Send a new email from one of your email accounts"
-icon: "/icons-svg/send.svg"
 ---
 
 ## Request Body
@@ -38,6 +37,10 @@ icon: "/icons-svg/send.svg"
 <ParamField body="replyTo" type="string">
   Reply-to address
 </ParamField>
+
+<Warning>
+  **Attachments**: Sending attachments via the API is coming soon. Currently, only text and HTML bodies are supported.
+</Warning>
 
 ## Response
 

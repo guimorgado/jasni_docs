@@ -1,14 +1,14 @@
 ---
 title: "Setup Guide"
 description: "Step-by-step guide to configure and test your webhook integrations"
-icon: "wrench"
+icon: "/icons-svg/check.svg"
 ---
 
 ## Prerequisites
 
 Before setting up webhooks, make sure you have:
 
-<Check>A Jasni API key ([get one here](https://app.jasni.ai/developers))</Check>
+<Check>A Jasni API key (go to **Developers** → **API Keys** in your [dashboard](https://app.jasni.ai))</Check>
 <Check>A publicly accessible HTTPS endpoint</Check>
 <Check>A way to store secrets securely (environment variables, secrets manager)</Check>
 
@@ -16,68 +16,79 @@ Before setting up webhooks, make sure you have:
 
 ## Step 1: Create Your Endpoint
 
-Create an HTTP POST endpoint to receive webhook events. Here's a minimal example:
+Create an HTTP POST endpoint to receive webhook events:
 
 <Tabs>
-  <Tab title="Node.js (Express)">
-    ```javascript
-    const express = require('express');
-    const app = express();
+  <Tab title="TypeScript (Express)">
+```typescript
+import { verifySignature } from 'jasni-sdk'
+import express from 'express'
 
-    // Use raw body for signature verification
-    app.post('/webhooks/jasni', 
-      express.raw({ type: 'application/json' }), 
-      (req, res) => {
-        // Acknowledge immediately
-        res.status(200).send('OK');
-        
-        // Parse and process
-        const event = JSON.parse(req.body.toString());
-        console.log('Received:', event.event);
-        
-        // Handle the event
-        handleEvent(event);
-      }
-    );
+const app = express()
 
-    app.listen(3000);
-    ```
+app.post('/webhooks/jasni', express.raw({ type: 'application/json' }), (req, res) => {
+  const signature = req.headers['x-jasni-signature'] as string
+  const payload = req.body.toString()
+  
+  if (!verifySignature(payload, signature, process.env.WEBHOOK_SECRET!)) {
+    return res.status(401).send('Invalid signature')
+  }
+  
+  // Acknowledge immediately
+  res.status(200).send('OK')
+  
+  // Process async
+  const event = JSON.parse(payload)
+  handleEvent(event)
+})
+
+app.listen(3000)
+```
   </Tab>
   
-  <Tab title="Python (Flask)">
-    ```python
-    from flask import Flask, request
+  <Tab title="Python (FastAPI)">
+```python
+from fastapi import FastAPI, Request, HTTPException
+from jasni.webhooks import verify_signature
+import os
 
-    app = Flask(__name__)
+app = FastAPI()
 
-    @app.route('/webhooks/jasni', methods=['POST'])
-    def handle_webhook():
-        # Acknowledge immediately
-        event = request.get_json()
-        print(f"Received: {event['event']}")
-        
-        # Handle the event
-        handle_event(event)
-        
-        return 'OK', 200
-    ```
+@app.post("/webhooks/jasni")
+async def handle_webhook(request: Request):
+    signature = request.headers.get("X-Jasni-Signature")
+    payload = await request.body()
+    
+    if not verify_signature(payload, signature, os.environ.get("WEBHOOK_SECRET")):
+        raise HTTPException(status_code=401, detail="Invalid signature")
+    
+    event = await request.json()
+    await handle_event(event)
+    
+    return {"status": "ok"}
+```
   </Tab>
   
   <Tab title="Next.js">
-    ```typescript
-    // app/api/webhooks/jasni/route.ts
-    import { NextRequest, NextResponse } from 'next/server';
+```typescript
+// app/api/webhooks/jasni/route.ts
+import { NextRequest, NextResponse } from 'next/server'
+import { verifySignature } from 'jasni-sdk'
 
-    export async function POST(request: NextRequest) {
-      const event = await request.json();
-      console.log('Received:', event.event);
-      
-      // Handle the event
-      await handleEvent(event);
-      
-      return NextResponse.json({ received: true });
-    }
-    ```
+export async function POST(request: NextRequest) {
+  const signature = request.headers.get('x-jasni-signature')!
+  const payload = await request.text()
+  
+  if (!verifySignature(payload, signature, process.env.WEBHOOK_SECRET!)) {
+    return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
+  }
+  
+  const event = JSON.parse(payload)
+  await handleEvent(event)
+  
+  return NextResponse.json({ received: true })
+}
+```
   </Tab>
 </Tabs>
 
@@ -85,54 +96,39 @@ Create an HTTP POST endpoint to receive webhook events. Here's a minimal example
 
 ## Step 2: Register Your Webhook
 
-Use the Jasni API to register your endpoint:
-
 <Tabs>
-  <Tab title="cURL">
-    ```bash
-    curl -X POST https://api.jasni.ai/api/v1/webhooks \
-      -H "Authorization: Bearer jsk_your_api_key" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "url": "https://your-server.com/webhooks/jasni",
-        "events": ["email.received", "email.sent"],
-        "description": "Production webhook"
-      }'
-    ```
+  <Tab title="TypeScript">
+```typescript
+import { Jasni } from 'jasni-sdk'
+
+const jasni = new Jasni('jsk_your_api_key')
+
+const { webhook } = await jasni.webhooks.create({
+  url: 'https://your-server.com/webhooks/jasni',
+  events: ['email.received', 'email.sent'],
+  description: 'Production webhook',
+})
+
+// IMPORTANT: Save this secret!
+console.log('Webhook Secret:', webhook.secret)
+```
   </Tab>
   
-  <Tab title="TypeScript SDK">
-    ```typescript
-    import Jasni from '@jasni/sdk';
+  <Tab title="Python">
+```python
+from jasni import Jasni
 
-    const jasni = new Jasni({ apiKey: 'jsk_your_api_key' });
+jasni = Jasni("jsk_your_api_key")
 
-    const { webhook } = await jasni.webhooks.create({
-      url: 'https://your-server.com/webhooks/jasni',
-      events: ['email.received', 'email.sent'],
-      description: 'Production webhook',
-    });
+result = jasni.webhooks.create(
+    url="https://your-server.com/webhooks/jasni",
+    events=["email.received", "email.sent"],
+    description="Production webhook"
+)
 
-    // IMPORTANT: Save this secret!
-    console.log('Webhook Secret:', webhook.secret);
-    ```
-  </Tab>
-  
-  <Tab title="Python SDK">
-    ```python
-    from jasni import Jasni
-
-    jasni = Jasni(api_key="jsk_your_api_key")
-
-    webhook = jasni.webhooks.create(
-        url="https://your-server.com/webhooks/jasni",
-        events=["email.received", "email.sent"],
-        description="Production webhook"
-    )
-
-    # IMPORTANT: Save this secret!
-    print(f"Webhook Secret: {webhook.secret}")
-    ```
+# IMPORTANT: Save this secret!
+print(f"Webhook Secret: {result.webhook.secret}")
+```
   </Tab>
 </Tabs>
 
@@ -140,97 +136,47 @@ Use the Jasni API to register your endpoint:
   **Save the secret immediately!** The webhook secret is only shown once when creating the webhook. Store it securely in your environment variables.
 </Warning>
 
-The response will include:
-
-```json
-{
-  "success": true,
-  "data": {
-    "webhook": {
-      "id": "wh_abc123",
-      "url": "https://your-server.com/webhooks/jasni",
-      "events": ["email.received", "email.sent"],
-      "secret": "whsec_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-      "active": true,
-      "description": "Production webhook"
-    }
-  }
-}
-```
-
 ---
 
-## Step 3: Add Signature Verification
+## Step 3: Signature Verification
 
-Always verify that webhooks are genuinely from Jasni:
+The SDK provides `verifySignature()` which handles all the security concerns automatically:
+
+- Parses the signature header format (`t=timestamp,v1=signature`)
+- Validates timestamp to prevent replay attacks (5-minute tolerance)
+- Uses timing-safe comparison to prevent timing attacks
 
 <Tabs>
-  <Tab title="Node.js">
-    ```javascript
-    const crypto = require('crypto');
+  <Tab title="TypeScript">
+```typescript
+import { verifySignature } from 'jasni-sdk'
 
-    function verifySignature(payload, signature, secret) {
-      const expected = crypto
-        .createHmac('sha256', secret)
-        .update(payload)
-        .digest('hex');
-      
-      return crypto.timingSafeEqual(
-        Buffer.from(signature),
-        Buffer.from(expected)
-      );
-    }
-
-    app.post('/webhooks/jasni', 
-      express.raw({ type: 'application/json' }), 
-      (req, res) => {
-        const signature = req.headers['x-webhook-signature'];
-        const payload = req.body.toString();
-        
-        if (!verifySignature(payload, signature, process.env.WEBHOOK_SECRET)) {
-          return res.status(401).send('Invalid signature');
-        }
-        
-        res.status(200).send('OK');
-        
-        const event = JSON.parse(payload);
-        handleEvent(event);
-      }
-    );
-    ```
+// Returns true if signature is valid
+const isValid = verifySignature(
+  payload,           // Raw request body as string
+  signature,         // X-Jasni-Signature header
+  webhookSecret      // Your webhook secret
+)
+```
   </Tab>
   
   <Tab title="Python">
-    ```python
-    import hmac
-    import hashlib
-    import os
+```python
+from jasni.webhooks import verify_signature
 
-    WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET')
-
-    def verify_signature(payload: bytes, signature: str) -> bool:
-        expected = hmac.new(
-            WEBHOOK_SECRET.encode('utf-8'),
-            payload,
-            hashlib.sha256
-        ).hexdigest()
-        return hmac.compare_digest(signature, expected)
-
-    @app.route('/webhooks/jasni', methods=['POST'])
-    def handle_webhook():
-        signature = request.headers.get('X-Webhook-Signature')
-        payload = request.get_data()
-        
-        if not verify_signature(payload, signature):
-            return 'Invalid signature', 401
-        
-        event = request.get_json()
-        handle_event(event)
-        
-        return 'OK', 200
-    ```
+# Returns True if signature is valid
+is_valid = verify_signature(
+    payload,           # Raw request body as bytes
+    signature,         # X-Jasni-Signature header
+    webhook_secret     # Your webhook secret
+)
+```
   </Tab>
 </Tabs>
+
+<Tip>
+  See the [Security guide](/webhooks/security) for more details on how signature verification works.
+</Tip>
 
 ---
 
@@ -238,39 +184,47 @@ Always verify that webhooks are genuinely from Jasni:
 
 Implement handlers for each event type you've subscribed to:
 
-```javascript
-async function handleEvent(event) {
+<Tabs>
+  <Tab title="TypeScript">
+```typescript
+async function handleEvent(event: WebhookEvent) {
   switch (event.event) {
     case 'email.received':
-      // New email arrived - trigger your AI agent
-      await processIncomingEmail(event.data);
-      break;
-      
+      await processIncomingEmail(event.data)
+      break
     case 'email.sent':
-      // Email sent successfully - update your records
-      await logSentEmail(event.data);
-      break;
-      
+      await logSentEmail(event.data)
+      break
     case 'email.bounced':
-      // Delivery failed - handle the bounce
-      await handleBounce(event.data);
-      break;
-      
+      await handleBounce(event.data)
+      break
     case 'email.spam':
-      // Email marked as spam
-      await logSpamEmail(event.data);
-      break;
-      
+      await logSpamEmail(event.data)
+      break
     case 'email.deleted':
-      // Email was deleted
-      await syncDeletion(event.data);
-      break;
-      
-    default:
-      console.log('Unknown event:', event.event);
+      await syncDeletion(event.data)
+      break
   }
 }
 ```
+  </Tab>
+  <Tab title="Python">
+```python
+async def handle_event(event: dict):
+    match event["event"]:
+        case "email.received":
+            await process_incoming_email(event["data"])
+        case "email.sent":
+            await log_sent_email(event["data"])
+        case "email.bounced":
+            await handle_bounce(event["data"])
+        case "email.spam":
+            await log_spam_email(event["data"])
+        case "email.deleted":
+            await sync_deletion(event["data"])
+```
+  </Tab>
+</Tabs>
 
 ---
 
@@ -292,43 +246,13 @@ Use the ngrok URL (e.g., `https://abc123.ngrok.io/webhooks/jasni`) when creating
 
 ### Send a Test Event
 
-Create a simple script to simulate webhook events:
+The easiest way to test is to trigger a real event:
 
-```javascript
-const crypto = require('crypto');
+1. Create a webhook pointing to your ngrok URL
+2. Send an email to your Jasni account
+3. Check your logs for the received webhook
 
-const secret = process.env.WEBHOOK_SECRET;
-const payload = JSON.stringify({
-  event: 'email.received',
-  timestamp: new Date().toISOString(),
-  data: {
-    id: 'test-123',
-    from: 'sender@example.com',
-    to: ['you@yourdomain.com'],
-    subject: 'Test Email',
-    account: 'you@yourdomain.com',
-    folder: 'INBOX',
-    text: 'This is a test email for webhook testing.',
-  },
-});
-
-const signature = crypto
-  .createHmac('sha256', secret)
-  .update(payload)
-  .digest('hex');
-
-// Send to your endpoint
-fetch('http://localhost:3000/webhooks/jasni', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'X-Webhook-Signature': signature,
-    'X-Webhook-Timestamp': Math.floor(Date.now() / 1000).toString(),
-    'X-Webhook-Event': 'email.received',
-  },
-  body: payload,
-}).then(res => console.log('Response:', res.status));
-```
+For automated testing, you can use the webhook secret to generate valid test payloads in your test suite.
 
 ---
 
@@ -340,63 +264,123 @@ fetch('http://localhost:3000/webhooks/jasni', {
   Webhook requests timeout after **30 seconds**. Return a `200` response immediately, then process asynchronously.
 </Warning>
 
-```javascript
-app.post('/webhooks/jasni', (req, res) => {
+<Tabs>
+  <Tab title="TypeScript">
+```typescript
+app.post('/webhooks/jasni', express.raw({ type: 'application/json' }), (req, res) => {
   // Acknowledge FIRST
-  res.status(200).send('OK');
+  res.status(200).send('OK')
   
   // Process AFTER responding
-  processEventAsync(req.body).catch(console.error);
-});
+  processEventAsync(JSON.parse(req.body.toString())).catch(console.error)
+})
 ```
+  </Tab>
+  <Tab title="Python">
+```python
+from fastapi import BackgroundTasks
+
+@app.post("/webhooks/jasni")
+async def handle_webhook(request: Request, background_tasks: BackgroundTasks):
+    event = await request.json()
+    
+    # Add to background tasks
+    background_tasks.add_task(process_event_async, event)
+    
+    # Acknowledge immediately
+    return {"status": "ok"}
+```
+  </Tab>
+</Tabs>
 
 ### Handle Duplicates
 
 The same event might be delivered multiple times. Use idempotency:
 
-```javascript
-const processedEvents = new Set(); // Use Redis in production
+<Tabs>
+  <Tab title="TypeScript">
+```typescript
+const processedEvents = new Set() // Use Redis in production
 
-async function handleEvent(event) {
-  const eventId = `${event.event}-${event.data.id}-${event.timestamp}`;
+async function handleEvent(event: WebhookEvent) {
+  const eventId = `${event.event}-${event.data.id}-${event.timestamp}`
   
   if (processedEvents.has(eventId)) {
-    console.log('Duplicate, skipping:', eventId);
-    return;
+    console.log('Duplicate, skipping:', eventId)
+    return
   }
   
-  processedEvents.add(eventId);
-  await processEvent(event);
+  processedEvents.add(eventId)
+  await processEvent(event)
 }
 ```
+  </Tab>
+  <Tab title="Python">
+```python
+processed_events = set()  # Use Redis in production
+
+async def handle_event(event: dict):
+    event_id = f"{event['event']}-{event['data']['id']}-{event['timestamp']}"
+    
+    if event_id in processed_events:
+        print(f"Duplicate, skipping: {event_id}")
+        return
+    
+    processed_events.add(event_id)
+    await process_event(event)
+```
+  </Tab>
+</Tabs>
 
 ### Use a Message Queue
 
 For high-volume webhooks, queue events for processing:
 
-```javascript
-import { Queue, Worker } from 'bullmq';
+<Tabs>
+  <Tab title="TypeScript (BullMQ)">
+```typescript
+import { Queue, Worker } from 'bullmq'
 
-const webhookQueue = new Queue('webhooks');
+const webhookQueue = new Queue('webhooks')
 
 // Endpoint adds to queue
-app.post('/webhooks/jasni', async (req, res) => {
-  await webhookQueue.add('process', req.body);
-  res.status(200).send('OK');
-});
+app.post('/webhooks/jasni', express.raw({ type: 'application/json' }), async (req, res) => {
+  const event = JSON.parse(req.body.toString())
+  await webhookQueue.add('process', event)
+  res.status(200).send('OK')
+})
 
 // Worker processes queue
 new Worker('webhooks', async (job) => {
-  await processEvent(job.data);
-});
+  await processEvent(job.data)
+})
 ```
+  </Tab>
+  <Tab title="Python (Celery)">
+```python
+from celery import Celery
+
+celery = Celery('webhooks', broker='redis://localhost:6379')
+
+@celery.task
+def process_webhook(event: dict):
+    process_event(event)
+
+@app.post("/webhooks/jasni")
+async def handle_webhook(request: Request):
+    event = await request.json()
+    process_webhook.delay(event)
+    return {"status": "ok"}
+```
+  </Tab>
+</Tabs>
 
 ---
 
 ## Deployment Checklist
 
 <Check>**Use HTTPS** - Never use HTTP in production</Check>
-<Check>**Verify signatures** - Always validate `X-Webhook-Signature`</Check>
+<Check>**Verify signatures** - Always validate `X-Jasni-Signature`</Check>
 <Check>**Store secrets securely** - Use environment variables or a secrets manager</Check>
 <Check>**Handle duplicates** - Implement idempotency</Check>
 <Check>**Respond quickly** - Return 200 within 30 seconds</Check>
@@ -440,10 +424,10 @@ new Worker('webhooks', async (job) => {
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="Events Reference" icon="bell" href="/webhooks/events">
+  <Card title="Events Reference" icon="/icons-svg/bolt.svg" href="/webhooks/events">
     See all event types and payloads
   </Card>
-  <Card title="Security" icon="shield-check" href="/webhooks/security">
+  <Card title="Security" icon="/icons-svg/keys.svg" href="/webhooks/security">
     Learn about signature verification
   </Card>
 </CardGroup>

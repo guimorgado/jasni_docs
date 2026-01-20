@@ -1,95 +1,186 @@
 ---
 title: "Inboxes"
 sidebarTitle: "Inboxes"
-description: "Give your AI agents their own email identity"
+description: "Manage email identities for your AI agents"
 icon: "/icons-svg/inbox.svg"
 ---
 
-## Overview
+An inbox represents an email account for your AI agent. Each inbox has its own email address and can send, receive, and manage emails independently.
 
-An inbox in Jasni is the email identity for your AI agent. It's a dedicated address from which your agent can send, receive, and act on emails autonomously—communicating with services, people, and other agents.
-
-<Note>
-  Each inbox is linked to your Jasni account. You can create multiple inboxes for different agents or purposes, all managed through a single API key.
-</Note>
-
-## Creating an Agent Inbox
-
-You can set up an inbox for your agent in two ways:
-
-<CardGroup cols={2}>
-  <Card title="Create New Identity" icon="plus">
-    Create a fresh email address with your custom domain—a clean identity for your agent
-  </Card>
-  <Card title="Connect Existing Account" icon="link">
-    Link an existing email account (Gmail, Outlook, or any IMAP provider) to give your agent access
-  </Card>
-</CardGroup>
-
-## Inbox Properties
+## Properties
 
 | Property | Type | Description |
 |----------|------|-------------|
+| `id` | string | Unique identifier for the inbox |
 | `email` | string | The agent's email address |
 | `name` | string | Display name (e.g., "Support Agent", "Booking Assistant") |
-| `provider` | string | Email provider (gmail, outlook, imap, jasni) |
-| `status` | string | Connection status (active, error, disconnected) |
-| `created_at` | datetime | When the inbox was created |
+| `created_at` | string | When the inbox was created (ISO 8601 format) |
 
-## Folders
+## Fetching Emails
 
-Each inbox contains standard email folders:
-
-| Folder | Description |
-|--------|-------------|
-| `INBOX` | Incoming emails your agent can process |
-| `Sent` | Emails your agent has sent |
-| `Drafts` | Draft emails |
-| `Trash` | Deleted emails |
-| `Spam` / `Junk` | Spam folder |
-
-<Tip>
-  Folder names may vary by provider. Jasni normalizes common folders, but custom folders retain their original names.
-</Tip>
-
-## Multiple Agents, Multiple Inboxes
-
-You can create dedicated inboxes for different agents or purposes. Specify which inbox to use with the `account` parameter:
+Specify which inbox to use with the `account` parameter. You can also specify a `folder` (defaults to `INBOX`):
 
 ```bash
-# Support agent inbox
-GET /api/v1/emails?account=support-agent@yourcompany.com&folder=INBOX
+GET /api/v1/emails?account=support-agent@jasnimail.com
 ```
 
 ```bash
-# Sales agent inbox
-GET /api/v1/emails?account=sales-agent@yourcompany.com&folder=INBOX
+GET /api/v1/emails?account=sales-agent@jasnimail.com&folder=Sent
 ```
 
-## Use Cases
+## SDK Usage
 
-<AccordionGroup>
-  <Accordion title="Dedicated Agent Identities" icon="robot">
-    Give each AI agent its own email address so it can build relationships, maintain context, and communicate independently.
-  </Accordion>
-  <Accordion title="Specialized Agents" icon="users">
-    Create purpose-specific agents: support-agent@, booking-agent@, research-agent@—each handling their domain autonomously.
-  </Accordion>
-  <Accordion title="Multi-Agent Collaboration" icon="arrows-split-up-and-left">
-    Enable multiple agents to communicate with each other via email, coordinating on complex tasks.
-  </Accordion>
-  <Accordion title="Service Integration" icon="plug">
-    Let your agents interact with external services that use email as their interface—confirmations, notifications, approvals.
-  </Accordion>
-</AccordionGroup>
+Manage inboxes programmatically using the Jasni SDKs.
+
+<Tabs>
+  <Tab title="TypeScript">
+    **List Inboxes**
+    
+    Retrieve all inboxes associated with your account:
+    
+    ```typescript
+    import { Jasni } from 'jasni-sdk'
+    
+    const jasni = new Jasni('jsk_your_api_key')
+    
+    const { accounts, total } = await jasni.accounts.list()
+    
+    console.log(`Found ${total} inboxes:`)
+    accounts.forEach(account => {
+      console.log(`- ${account.email} (${account.name})`)
+    })
+    ```
+    
+    **Create Inbox**
+    
+    Create a new inbox for your AI agent:
+    
+    ```typescript
+    // Create with auto-generated username
+    const { account } = await jasni.accounts.create({
+      name: 'Support Agent',
+    })
+    console.log('Created inbox:', account.email)
+    
+    // Create with specific username
+    const { account: salesAgent } = await jasni.accounts.create({
+      username: 'sales-agent',
+      name: 'Sales Agent',
+    })
+    // Result: sales-agent@jasnimail.com
+    ```
+    
+    | Parameter | Type | Required | Description |
+    |-----------|------|----------|-------------|
+    | `username` | `string` | No | Local part of the email address. Auto-generated if not provided. |
+    | `name` | `string` | No | Display name for the inbox |
+    
+    **Update Inbox**
+    
+    Update an existing inbox's display name:
+    
+    ```typescript
+    const { account } = await jasni.accounts.update({
+      email: 'sales-agent@jasnimail.com',
+      name: 'Enterprise Sales Agent',
+    })
+    console.log('Updated:', account.name)
+    ```
+    
+    **Delete Inbox**
+    
+    Delete an inbox permanently:
+    
+    ```typescript
+    await jasni.accounts.delete('sales-agent@jasnimail.com')
+    console.log('Inbox deleted')
+    ```
+    
+    <Warning>
+      Deleting an inbox is permanent. All emails and data associated with it will be lost.
+    </Warning>
+    
+  </Tab>
+  
+  <Tab title="Python">
+    **List Inboxes**
+    
+    Retrieve all inboxes associated with your account:
+    
+    ```python
+    from jasni import Jasni
+    
+    jasni = Jasni("jsk_your_api_key")
+    
+    result = jasni.accounts.list()
+    
+    print(f"Found {result.total} inboxes:")
+    for account in result.accounts:
+        print(f"- {account.email} ({account.name})")
+    ```
+    
+    **Create Inbox**
+    
+    Create a new inbox for your AI agent:
+    
+    ```python
+    # Create with auto-generated username
+    result = jasni.accounts.create(name="Support Agent")
+    print(f"Created inbox: {result.account.email}")
+    
+    # Create with specific username
+    result = jasni.accounts.create(
+        username="sales-agent",
+        name="Sales Agent"
+    )
+    # Result: sales-agent@jasnimail.com
+    ```
+    
+    | Parameter | Type | Required | Description |
+    |-----------|------|----------|-------------|
+    | `username` | `str` | No | Local part of the email address. Auto-generated if not provided. |
+    | `name` | `str` | No | Display name for the inbox |
+    
+    **Update Inbox**
+    
+    Update an existing inbox's display name:
+    
+    ```python
+    result = jasni.accounts.update(
+        "sales-agent@jasnimail.com",
+        name="Enterprise Sales Agent"
+    )
+    print(f"Updated: {result.account.name}")
+    ```
+    
+    **Delete Inbox**
+    
+    Delete an inbox permanently:
+    
+    ```python
+    jasni.accounts.delete("sales-agent@jasnimail.com")
+    print("Inbox deleted")
+    ```
+    
+    <Warning>
+      Deleting an inbox is permanent. All emails and data associated with it will be lost.
+    </Warning>
+  </Tab>
+</Tabs>
 
 ## Related
 
 <CardGroup cols={2}>
-  <Card title="Messages" icon="envelope" href="/concepts/messages">
+  <Card title="Messages" icon="/icons-svg/message.svg" href="/concepts/messages">
     Learn about email messages
   </Card>
-  <Card title="Quickstart" icon="rocket" href="/quickstart">
+  <Card title="Quickstart" icon="/icons-svg/rocket.svg" href="/quickstart">
     Give your agent an inbox
+  </Card>
+  <Card title="TypeScript SDK" icon="/icons-svg/code.svg" href="/sdks/typescript/accounts">
+    Full TypeScript SDK reference for accounts
+  </Card>
+  <Card title="Python SDK" icon="/icons-svg/code.svg" href="/sdks/python/accounts">
+    Full Python SDK reference for accounts
   </Card>
 </CardGroup>

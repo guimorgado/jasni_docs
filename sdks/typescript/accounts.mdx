@@ -4,7 +4,7 @@ description: "Manage email accounts with the Jasni TypeScript SDK"
 icon: "/icons-svg/inbox.svg"
 ---
 
-The `accounts` resource allows you to create, list, and delete email accounts associated with your Jasni account.
+The `accounts` resource allows you to create, list, update, and delete email accounts associated with your Jasni account.
 
 ## List Accounts
 
@@ -51,7 +51,7 @@ const { account } = await jasni.accounts.create({
   username: 'support',
   name: 'Support Team',
 })
-// Result: support@mail.jasni.ai
+// Result: support@jasnimail.com
 ```
 
 ### Options
@@ -70,12 +70,40 @@ interface CreateAccountResponse {
 }
 ```
 
+## Update Account
+
+Update an email account's display name:
+
+```typescript
+const { account } = await jasni.accounts.update({
+  email: 'support@jasnimail.com',
+  name: 'Customer Support Team',
+})
+console.log('Updated:', account.name)
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `email` | `string` | Yes | The email address of the account to update |
+| `name` | `string` | Yes | New display name for the account |
+
+### Response
+
+```typescript
+interface UpdateAccountResponse {
+  account: Account
+  message: string
+}
+```
+
 ## Delete Account
 
 Delete an email account:
 
 ```typescript
-const result = await jasni.accounts.delete('support@mail.jasni.ai')
+const result = await jasni.accounts.delete('support@jasnimail.com')
 console.log(result.message) // "Account deleted successfully"
 ```
 

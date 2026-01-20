@@ -6,11 +6,11 @@ icon: "/icons-svg/email.svg"
 
 ## Overview
 
-Jasni provides a complete email API that enables your AI agents to communicate autonomously. Send, receive, read, reply, and forward emails—all programmatically through your agent's inbox.
+Jasni provides a complete email API that enables your AI agents to communicate autonomously. Send, receive, read, reply, and forward emails-all programmatically through your agent's inbox.
 
 ## Agent Inboxes
 
-Before your agent can work with emails, it needs an inbox—its own email identity. You can:
+Before your agent can work with emails, it needs an inbox-its own email identity. You can:
 
 - **Create a new identity**: Set up a fresh email address with your custom domain for your agent
 - **Connect an existing account**: Give your agent access to an existing email provider (Gmail, Outlook, custom IMAP)
@@ -81,6 +81,10 @@ POST /api/v1/emails/send
   Always provide both `text` and `html` versions for maximum compatibility across email clients.
 </Tip>
 
+<Warning>
+  **Attachments**: Sending attachments via the API is coming soon. Currently, only text and HTML bodies are supported.
+</Warning>
+
 ### Replying to Emails
 
 Reply to an existing email with proper threading:
@@ -140,6 +144,30 @@ Email threading is automatically handled by Jasni. When you reply to or forward 
 - **References**: Full chain of Message-IDs in the thread
 
 This ensures emails are grouped correctly in the recipient's email client.
+
+### Listing Threads
+
+Retrieve email conversations grouped by thread:
+
+```bash
+GET /api/v1/emails/threads?account=you@domain.com&folder=INBOX
+```
+
+Response includes thread previews with participant info, message counts, and snippets.
+
+### Getting a Thread
+
+Fetch all emails in a specific thread:
+
+```bash
+GET /api/v1/emails/threads/{threadId}?account=you@domain.com
+```
+
+Returns all emails in chronological order with full content.
+
+<Tip>
+  Use the threads API to build AI agents that understand conversation context before generating responses.
+</Tip>
 
 ## Attachments
 

@@ -5,14 +5,12 @@ description: "Send, receive, and manage email messages"
 icon: "/icons-svg/message.svg"
 ---
 
-## Overview
-
 Messages are the core of Jasni. Every email you send, receive, reply to, or forward is a message. The API provides full control over message operations.
 
-## Message Structure
+## Properties
 
-| Field | Type | Description |
-|-------|------|-------------|
+| Property | Type | Description |
+|----------|------|-------------|
 | `uid` | integer | Unique identifier within the mailbox |
 | `messageId` | string | RFC 2822 Message-ID header |
 | `from` | string | Sender email address |
@@ -20,111 +18,237 @@ Messages are the core of Jasni. Every email you send, receive, reply to, or forw
 | `cc` | string[] | CC recipients |
 | `bcc` | string[] | BCC recipients (only visible to sender) |
 | `subject` | string | Email subject line |
-| `date` | datetime | When the email was sent/received |
+| `date` | string | When the email was sent/received (ISO 8601 format) |
 | `text` | string | Plain text body |
 | `html` | string | HTML body |
 | `attachments` | object[] | List of attachments |
 | `flags` | string[] | IMAP flags (e.g., `\Seen`, `\Flagged`) |
 
-## Operations
+## Fetching Messages
 
-### Send a Message
-
-```json
-POST /api/v1/emails/send
-{
-  "from": "you@domain.com",
-  "to": ["recipient@example.com"],
-  "subject": "Hello!",
-  "text": "Plain text content",
-  "html": "<p>HTML content</p>"
-}
-```
-
-<Tip>
-  Always provide both `text` and `html` versions for maximum compatibility across email clients.
-</Tip>
-
-### List Messages
+Specify which inbox to use with the `account` parameter. You can also specify a `folder` (defaults to `INBOX`):
 
 ```bash
-GET /api/v1/emails?account=you@domain.com&folder=INBOX&limit=50
+GET /api/v1/emails?account=support-agent@jasnimail.com
 ```
-
-### Read a Message
 
 ```bash
-GET /api/v1/emails/123?account=you@domain.com&folder=INBOX
+GET /api/v1/emails?account=sales-agent@jasnimail.com&folder=Sent
 ```
 
-### Update Message Status
+## SDK Usage
 
-Mark as read:
+Manage messages programmatically using the Jasni SDKs.
 
-```json
-PATCH /api/v1/emails/123?account=you@domain.com
-{
-  "action": "read"
-}
-```
-
-Mark as unread:
-
-```json
-PATCH /api/v1/emails/123?account=you@domain.com
-{
-  "action": "unread"
-}
-```
-
-### Delete a Message
-
-```bash
-DELETE /api/v1/emails/123?account=you@domain.com
-```
-
-<Note>
-  Deleting a message moves it to the Trash folder. It is not permanently deleted immediately.
-</Note>
-
-## Message Flags
-
-Messages can have the following flags:
-
-| Flag | Description |
-|------|-------------|
-| `\Seen` | Message has been read |
-| `\Flagged` | Message is flagged/starred |
-| `\Draft` | Message is a draft |
-| `\Answered` | Message has been replied to |
-
-## Best Practices
-
-<AccordionGroup>
-  <Accordion title="Provide both text and HTML" icon="code">
-    Some email clients don't render HTML. Always include a plain text fallback.
-  </Accordion>
-  <Accordion title="Use webhooks for incoming messages" icon="bolt">
-    Instead of polling, set up a webhook for `email.received` events to get instant notifications.
-  </Accordion>
-  <Accordion title="Validate recipients" icon="check">
-    Always validate email addresses before sending to avoid bounces and protect your sender reputation.
-  </Accordion>
-</AccordionGroup>
+<Tabs>
+  <Tab title="TypeScript">
+    **List Messages**
+    
+    Retrieve messages from an inbox:
+    
+    ```typescript
+    import { Jasni } from 'jasni-sdk'
+    
+    const jasni = new Jasni('jsk_your_api_key')
+    
+    const { emails, total } = await jasni.emails.list({
+      account: 'support-agent@jasnimail.com',
+      folder: 'INBOX',
+      limit: 20,
+    })
+    
+    console.log(`Found ${total} messages:`)
+    emails.forEach(email => {
+      console.log(`- ${email.subject} from ${email.from}`)
+    })
+    ```
+    
+    **Get Message**
+    
+    Retrieve a specific message by UID:
+    
+    ```typescript
+    const { email } = await jasni.emails.get(123, {
+      account: 'support-agent@jasnimail.com',
+    })
+    console.log(email.subject, email.text)
+    ```
+    
+    **Send Message**
+    
+    Send a new email:
+    
+    ```typescript
+    const result = await jasni.emails.send({
+      from: 'support-agent@jasnimail.com',
+      to: 'customer@example.com',
+      subject: 'Hello!',
+      text: 'Plain text body',
+      html: '<p>HTML body</p>',
+    })
+    console.log('Sent with ID:', result.messageId)
+    ```
+    
+    | Parameter | Type | Required | Description |
+    |-----------|------|----------|-------------|
+    | `from` | `string` | Yes | Sender email address (must be an account you own) |
+    | `to` | `string` or `string[]` | Yes | Recipient email address(es) |
+    | `subject` | `string` | Yes | Email subject |
+    | `text` | `string` | No | Plain text body |
+    | `html` | `string` | No | HTML body |
+    | `cc` | `string` or `string[]` | No | CC recipients |
+    | `bcc` | `string` or `string[]` | No | BCC recipients |
+    
+    **Reply to Message**
+    
+    Reply to an existing email:
+    
+    ```typescript
+    const result = await jasni.emails.reply(123, {
+      account: 'support-agent@jasnimail.com',
+      text: 'Thanks for your email!',
+      replyAll: false,
+    })
+    ```
+    
+    **Forward Message**
+    
+    Forward an email to new recipients:
+    
+    ```typescript
+    const result = await jasni.emails.forward(123, {
+      account: 'support-agent@jasnimail.com',
+      to: 'colleague@example.com',
+      text: 'FYI - see the email below',
+    })
+    ```
+    
+    **Delete Message**
+    
+    Delete an email:
+    
+    ```typescript
+    await jasni.emails.delete(123, {
+      account: 'support-agent@jasnimail.com',
+    })
+    console.log('Message deleted')
+    ```
+    
+    <Note>
+      Deleting a message moves it to the Trash folder. It is not permanently deleted immediately.
+    </Note>
+    
+  </Tab>
+  
+  <Tab title="Python">
+    **List Messages**
+    
+    Retrieve messages from an inbox:
+    
+    ```python
+    from jasni import Jasni
+    
+    jasni = Jasni("jsk_your_api_key")
+    
+    result = jasni.emails.list(
+        account="support-agent@jasnimail.com",
+        folder="INBOX",
+        limit=20
+    )
+    
+    print(f"Found {result.total} messages:")
+    for email in result.emails:
+        print(f"- {email.subject} from {email.from_}")
+    ```
+    
+    **Get Message**
+    
+    Retrieve a specific message by UID:
+    
+    ```python
+    result = jasni.emails.get(123, account="support-agent@jasnimail.com")
+    print(result.email.subject, result.email.text)
+    ```
+    
+    **Send Message**
+    
+    Send a new email:
+    
+    ```python
+    result = jasni.emails.send(
+        from_="support-agent@jasnimail.com",
+        to="customer@example.com",
+        subject="Hello!",
+        text="Plain text body",
+        html="<p>HTML body</p>"
+    )
+    print(f"Sent with ID: {result.message_id}")
+    ```
+    
+    | Parameter | Type | Required | Description |
+    |-----------|------|----------|-------------|
+    | `from_` | `str` | Yes | Sender email address (must be an account you own) |
+    | `to` | `str` or `list[str]` | Yes | Recipient email address(es) |
+    | `subject` | `str` | Yes | Email subject |
+    | `text` | `str` | No | Plain text body |
+    | `html` | `str` | No | HTML body |
+    | `cc` | `str` or `list[str]` | No | CC recipients |
+    | `bcc` | `str` or `list[str]` | No | BCC recipients |
+    
+    **Reply to Message**
+    
+    Reply to an existing email:
+    
+    ```python
+    result = jasni.emails.reply(
+        123,
+        account="support-agent@jasnimail.com",
+        text="Thanks for your email!",
+        reply_all=False
+    )
+    ```
+    
+    **Forward Message**
+    
+    Forward an email to new recipients:
+    
+    ```python
+    result = jasni.emails.forward(
+        123,
+        account="support-agent@jasnimail.com",
+        to="colleague@example.com",
+        text="FYI - see the email below"
+    )
+    ```
+    
+    **Delete Message**
+    
+    Delete an email:
+    
+    ```python
+    jasni.emails.delete(123, account="support-agent@jasnimail.com")
+    print("Message deleted")
+    ```
+    
+    <Note>
+      Deleting a message moves it to the Trash folder. It is not permanently deleted immediately.
+    </Note>
+  </Tab>
+</Tabs>
 
 ## Related
 
 <CardGroup cols={2}>
-  <Card title="Threads" icon="comments" href="/concepts/threads">
-    Group related messages
+  <Card title="Threads" icon="/icons-svg/reply.svg" href="/concepts/threads">
+    Group related messages into conversations
   </Card>
-  <Card title="Attachments" icon="paperclip" href="/concepts/attachments">
+  <Card title="Attachments" icon="/icons-svg/download.svg" href="/concepts/attachments">
     Add files to messages
   </Card>
-  <Card title="Send API" icon="paper-plane" href="/api-reference/emails/send">
-    Send email endpoint
+  <Card title="TypeScript SDK" icon="/icons-svg/code.svg" href="/sdks/typescript/emails">
+    Full TypeScript SDK reference for emails
   </Card>
-  <Card title="List API" icon="list" href="/api-reference/emails/list">
-    List emails endpoint
+  <Card title="Python SDK" icon="/icons-svg/code.svg" href="/sdks/python/emails">
+    Full Python SDK reference for emails
   </Card>
 </CardGroup>

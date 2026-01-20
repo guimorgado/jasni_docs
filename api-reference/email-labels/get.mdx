@@ -1,0 +1,141 @@
+---
+title: "Get Email Labels"
+api: "GET /api/v1/emails/{id}/labels"
+description: "Get all labels assigned to an email"
+---
+
+## Request
+
+<ParamField path="id" type="string" required>
+  Email UID (numeric) or message_id (string)
+</ParamField>
+
+<ParamField query="account" type="string" required>
+  Email account
+</ParamField>
+
+<ParamField query="folder" type="string" default="INBOX">
+  Mailbox folder where the email is located
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the request was successful
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="properties">
+    <ResponseField name="labels" type="array">
+      List of labels assigned to the email
+      <Expandable title="label properties">
+        <ResponseField name="id" type="string">
+          Label ID
+        </ResponseField>
+        <ResponseField name="name" type="string">
+          Label name
+        </ResponseField>
+        <ResponseField name="color" type="string">
+          Hex color code
+        </ResponseField>
+        <ResponseField name="description" type="string">
+          Label description
+        </ResponseField>
+        <ResponseField name="applied_by" type="string">
+          Who applied the label (e.g., "agent", "user")
+        </ResponseField>
+        <ResponseField name="applied_at" type="string">
+          When the label was applied
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="message_id" type="string">
+      The message ID of the email
+    </ResponseField>
+    <ResponseField name="account" type="string">
+      The email account
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X GET "https://api.jasni.ai/api/v1/emails/12345/labels?account=you@domain.com" \
+  -H "Authorization: Bearer jsk_your_api_key"
+```
+
+```javascript JavaScript
+const response = await fetch(
+  'https://api.jasni.ai/api/v1/emails/12345/labels?account=you@domain.com',
+  {
+    headers: {
+      'Authorization': 'Bearer jsk_your_api_key',
+    },
+  }
+);
+
+const data = await response.json();
+console.log('Labels:', data.data.labels);
+```
+
+```python Python
+import requests
+
+response = requests.get(
+    'https://api.jasni.ai/api/v1/emails/12345/labels',
+    headers={'Authorization': 'Bearer jsk_your_api_key'},
+    params={'account': 'you@domain.com'}
+)
+
+labels = response.json()['data']['labels']
+for label in labels:
+    print(f"{label['name']} ({label['color']})")
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "data": {
+    "labels": [
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440000",
+        "name": "Important",
+        "color": "#ef4444",
+        "description": "High priority emails",
+        "applied_by": "agent",
+        "applied_at": "2024-01-15T10:30:00Z"
+      },
+      {
+        "id": "550e8400-e29b-41d4-a716-446655440001",
+        "name": "Customer",
+        "color": "#22c55e",
+        "description": null,
+        "applied_by": "agent",
+        "applied_at": "2024-01-15T10:30:00Z"
+      }
+    ],
+    "message_id": "<abc123@example.com>",
+    "account": "you@domain.com"
+  }
+}
+```
+
+```json No labels
+{
+  "success": true,
+  "data": {
+    "labels": [],
+    "message_id": "<abc123@example.com>",
+    "account": "you@domain.com"
+  }
+}
+```
+</ResponseExample>
+
+## Notes
+
+- The `id` can be either a numeric UID or a message_id string
+- If a UID is provided, the email is fetched to get its message_id
+- Labels include metadata about when and who applied them

@@ -22,6 +22,152 @@
     }
   ],
   "paths": {
+    "/accounts": {
+      "get": {
+        "operationId": "listAccounts",
+        "summary": "List email accounts",
+        "description": "Retrieve all email accounts for the authenticated user",
+        "tags": ["Accounts"],
+        "responses": {
+          "200": {
+            "description": "List of email accounts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createAccount",
+        "summary": "Create email account",
+        "description": "Create a new email account",
+        "tags": ["Accounts"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Account created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateAccount",
+        "summary": "Update email account",
+        "description": "Update an email account's display name",
+        "tags": ["Accounts"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAccountRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Account updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAccount",
+        "summary": "Delete email account",
+        "description": "Delete an email account",
+        "tags": ["Accounts"],
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "description": "Email address to delete",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Account deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/emails": {
       "get": {
         "operationId": "listEmails",
@@ -59,6 +205,24 @@
               "minimum": 1,
               "maximum": 100,
               "default": 50
+            }
+          },
+          {
+            "name": "label_ids",
+            "in": "query",
+            "description": "Comma-separated list of label IDs to filter by. Emails must have ALL specified labels.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "labels",
+            "in": "query",
+            "description": "Comma-separated list of label names to filter by. Emails must have ALL specified labels.",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -345,6 +509,183 @@
         }
       }
     },
+    "/emails/drafts": {
+      "get": {
+        "operationId": "listDrafts",
+        "summary": "List drafts",
+        "description": "Retrieve all draft emails for an account",
+        "tags": ["Drafts"],
+        "parameters": [
+          {
+            "name": "account",
+            "in": "query",
+            "description": "Email account",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of drafts to fetch",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of drafts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftListResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Account not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "saveDraft",
+        "summary": "Save draft",
+        "description": "Save a new draft email",
+        "tags": ["Drafts"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveDraftRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Draft saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateDraft",
+        "summary": "Update draft",
+        "description": "Update an existing draft email",
+        "tags": ["Drafts"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDraftRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Draft updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteDraft",
+        "summary": "Delete draft",
+        "description": "Delete a draft email",
+        "tags": ["Drafts"],
+        "parameters": [
+          {
+            "name": "account",
+            "in": "query",
+            "description": "Email account",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          {
+            "name": "uid",
+            "in": "query",
+            "description": "Draft UID to delete",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Draft deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Draft not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/emails/{id}/reply": {
       "post": {
         "operationId": "replyToEmail",
@@ -500,13 +841,231 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
               }
             }
           }
         }
       }
-    }
-  },
+    },
+    "/emails/{id}/labels": {
+      "get": {
+        "operationId": "getEmailLabels",
+        "summary": "Get email labels",
+        "description": "Get all labels assigned to an email",
+        "tags": ["Email Labels"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Email UID or message_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "account",
+            "in": "query",
+            "description": "Email account",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          {
+            "name": "folder",
+            "in": "query",
+            "description": "Mailbox folder",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "INBOX"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of labels for the email",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailLabelsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Email not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "assignEmailLabels",
+        "summary": "Assign labels to email",
+        "description": "Assign one or more labels to an email. Labels can be referenced by ID or created by name.",
+        "tags": ["Email Labels"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Email UID or message_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "account",
+            "in": "query",
+            "description": "Email account",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          {
+            "name": "folder",
+            "in": "query",
+            "description": "Mailbox folder",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "INBOX"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignLabelsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Labels assigned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignLabelsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Email not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "removeEmailLabels",
+        "summary": "Remove labels from email",
+        "description": "Remove one or more labels from an email",
+        "tags": ["Email Labels"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Email UID or message_id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "account",
+            "in": "query",
+            "description": "Email account",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "email"
+            }
+          },
+          {
+            "name": "folder",
+            "in": "query",
+            "description": "Mailbox folder",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "INBOX"
+            }
+          },
+          {
+            "name": "label_ids",
+            "in": "query",
+            "description": "Comma-separated list of label IDs to remove",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Labels removed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RemoveLabelsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Email not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/labels": {
       "get": {
         "operationId": "listLabels",
@@ -576,6 +1135,46 @@
           },
           "409": {
             "description": "Label already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteLabel",
+        "summary": "Delete label",
+        "description": "Delete a label. This also removes all email-label associations.",
+        "tags": ["Labels"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "Label ID to delete",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Label deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteLabelResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Label not found",
             "content": {
               "application/json": {
                 "schema": {
@@ -765,7 +1364,6 @@
         }
       }
     }
-      }
   },
   "components": {
     "securitySchemes": {
@@ -789,6 +1387,337 @@
           }
         },
         "required": ["success", "error"]
+      },
+      "Account": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "name": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "AccountListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "accounts": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Account"
+                }
+              },
+              "total": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "CreateAccountRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "The local part of the email (before @). If not provided, a random username is generated."
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name (optional)"
+          }
+        }
+      },
+      "UpdateAccountRequest": {
+        "type": "object",
+        "required": ["email", "name"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email address of the account to update"
+          },
+          "name": {
+            "type": "string",
+            "description": "New display name"
+          }
+        }
+      },
+      "AccountResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "account": {
+                "$ref": "#/components/schemas/Account"
+              }
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "DraftListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "drafts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Email"
+            }
+          },
+          "total": {
+            "type": "integer"
+          },
+          "account": {
+            "type": "string"
+          }
+        }
+      },
+      "SaveDraftRequest": {
+        "type": "object",
+        "required": ["account"],
+        "properties": {
+          "account": {
+            "type": "string",
+            "format": "email",
+            "description": "Email account to save draft for"
+          },
+          "to": {
+            "type": "string",
+            "description": "Recipient email address"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject"
+          },
+          "text": {
+            "type": "string",
+            "description": "Plain text body"
+          },
+          "html": {
+            "type": "string",
+            "description": "HTML body"
+          },
+          "cc": {
+            "type": "string",
+            "description": "CC recipients"
+          }
+        }
+      },
+      "UpdateDraftRequest": {
+        "type": "object",
+        "required": ["account", "uid"],
+        "properties": {
+          "account": {
+            "type": "string",
+            "format": "email",
+            "description": "Email account"
+          },
+          "uid": {
+            "type": "integer",
+            "description": "UID of the draft to update"
+          },
+          "to": {
+            "type": "string",
+            "description": "Recipient email address"
+          },
+          "subject": {
+            "type": "string",
+            "description": "Email subject"
+          },
+          "text": {
+            "type": "string",
+            "description": "Plain text body"
+          },
+          "html": {
+            "type": "string",
+            "description": "HTML body"
+          },
+          "cc": {
+            "type": "string",
+            "description": "CC recipients"
+          }
+        }
+      },
+      "DraftResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "uid": {
+            "type": "integer"
+          },
+          "account": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "EmailLabelsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "labels": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Label"
+                }
+              },
+              "message_id": {
+                "type": "string"
+              },
+              "account": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "AssignLabelsRequest": {
+        "type": "object",
+        "properties": {
+          "label_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Array of existing label IDs to assign"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Array of label names (creates if not exists)"
+          },
+          "agent_name": {
+            "type": "string",
+            "description": "Name of the agent applying the labels"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional context about the categorization"
+          }
+        }
+      },
+      "AssignLabelsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "labels": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Label"
+                }
+              },
+              "created_labels": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Label"
+                }
+              },
+              "message_id": {
+                "type": "string"
+              },
+              "account": {
+                "type": "string"
+              }
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "RemoveLabelsResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "removed_count": {
+                "type": "integer"
+              },
+              "message_id": {
+                "type": "string"
+              }
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "DeleteLabelResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "deleted_id": {
+                "type": "string"
+              },
+              "deleted_name": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
       },
       "SuccessResponse": {
         "type": "object",

@@ -12,7 +12,7 @@ Retrieve all drafts for an account:
 
 ```python
 result = jasni.drafts.list(
-    account="me@mail.jasni.ai",
+    account="me@jasnimail.com",
     limit=50,  # Optional: default is 50
 )
 
@@ -57,7 +57,7 @@ Create a new draft:
 
 ```python
 result = jasni.drafts.create(
-    account="me@mail.jasni.ai",
+    account="me@jasnimail.com",
     to="recipient@example.com",
     subject="Draft subject",
     text="Draft body",
@@ -99,7 +99,7 @@ Update an existing draft:
 
 ```python
 jasni.drafts.update(
-    account="me@mail.jasni.ai",
+    account="me@jasnimail.com",
     uid=123,
     subject="Updated subject",
     text="Updated body",
@@ -134,7 +134,7 @@ class UpdateDraftResponse:
 Delete a draft:
 
 ```python
-jasni.drafts.delete(account="me@mail.jasni.ai", uid=123)
+jasni.drafts.delete(account="me@jasnimail.com", uid=123)
 ```
 
 ### Options
@@ -154,7 +154,7 @@ from jasni import Jasni
 jasni = Jasni("jsk_your_api_key")
 
 def draft_workflow():
-    account = "me@mail.jasni.ai"
+    account = "me@jasnimail.com"
     
     # Create a new draft
     result = jasni.drafts.create(
@@ -207,7 +207,7 @@ from jasni import AsyncJasni
 
 async def draft_workflow_async():
     jasni = AsyncJasni("jsk_your_api_key")
-    account = "me@mail.jasni.ai"
+    account = "me@jasnimail.com"
     
     # Create a new draft
     result = await jasni.drafts.create(

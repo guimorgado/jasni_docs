@@ -2,7 +2,6 @@
 title: "Create Webhook"
 api: "POST /api/v1/webhooks"
 description: "Create a new webhook endpoint to receive email events"
-icon: "/icons-svg/plus.svg"
 ---
 
 ## Request Body
@@ -16,10 +15,13 @@ icon: "/icons-svg/plus.svg"
   
   Available events:
   - `email.received` - New email received
-  - `email.sent` - Email sent successfully  
+  - `email.sent` - Email sent successfully
+  - `email.delivered` - Email delivered to recipient's server
   - `email.bounced` - Email bounced
   - `email.spam` - Email marked as spam
+  - `email.rejected` - Email rejected before delivery
   - `email.deleted` - Email deleted
+  - `domain.verified` - Custom domain verified
 </ParamField>
 
 <ParamField body="description" type="string">
@@ -161,7 +163,7 @@ print(f"Secret: {webhook['secret']}")  # Save this securely!
 ```json Error - Invalid events
 {
   "success": false,
-  "error": "Invalid events: invalid.event. Valid: email.received, email.sent, email.bounced, email.spam, email.deleted"
+  "error": "Invalid events: invalid.event. Valid: email.received, email.sent, email.delivered, email.bounced, email.spam, email.rejected, email.deleted, domain.verified"
 }
 ```
 
@@ -184,15 +186,32 @@ print(f"Secret: {webhook['secret']}")  # Save this securely!
 
 ## Verifying Webhook Signatures
 
-Use the secret to verify that webhook requests are from Jasni:
+Use the secret to verify that webhook requests are from Jasni. The signature is in the `X-Jasni-Signature` header with format `t=timestamp,v1=signature`:
 
 ```javascript
 const crypto = require('crypto');
 
-function verifyWebhookSignature(payload, signature, secret) {
+function verifyWebhookSignature(payload, signatureHeader, secret) {
+  // Parse signature header (format: "t=timestamp,v1=signature")
+  const parts = {};
+  for (const item of signatureHeader.split(',')) {
+    const [key, ...valueParts] = item.split('=');
+    if (key && valueParts.length > 0) {
+      parts[key] = valueParts.join('=');
+    }
+  }
+  
+  const timestamp = parts['t'];
+  const signature = parts['v1'];
+  
+  if (!timestamp || !signature) return false;
+  
+  // Create signed payload: "timestamp.payload"
+  const signedPayload = `${timestamp}.${payload}`;
+  
   const expectedSignature = crypto
     .createHmac('sha256', secret)
-    .update(payload)
+    .update(signedPayload)
     .digest('hex');
   
   return crypto.timingSafeEqual(

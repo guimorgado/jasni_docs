@@ -6,7 +6,7 @@ icon: "/icons-svg/webhook.svg"
 
 ## What are Webhooks?
 
-Webhooks are the nervous system of your AI agent. They deliver real-time HTTP notifications the moment something happens in your agent's inbox—a new email arrives, a message bounces, or an email is marked as spam.
+Webhooks are the nervous system of your AI agent. They deliver real-time HTTP notifications the moment something happens in your agent's inbox-a new email arrives, a message bounces, or an email is marked as spam.
 
 <Note>
   Webhooks are what transform your AI from a passive system that checks email periodically into an active agent that responds instantly.
@@ -19,7 +19,7 @@ Webhooks are the nervous system of your AI agent. They deliver real-time HTTP no
     Your agent knows about new emails the moment they arrive
   </Card>
   <Card title="Resource Efficient" icon="/icons-svg/check.svg">
-    No wasted cycles polling—your agent only wakes when needed
+    No wasted cycles polling-your agent only wakes when needed
   </Card>
   <Card title="Secure" icon="/icons-svg/keys.svg">
     Signed payloads ensure events are authentic
@@ -35,9 +35,12 @@ Webhooks are the nervous system of your AI agent. They deliver real-time HTTP no
 |-------|---------|
 | `email.received` | New email arrives in mailbox |
 | `email.sent` | Email sent successfully |
+| `email.delivered` | Email delivered to recipient's server |
 | `email.bounced` | Email delivery failed |
 | `email.spam` | Email marked as spam |
+| `email.rejected` | Email rejected before delivery |
 | `email.deleted` | Email was deleted |
+| `domain.verified` | Custom domain verified |
 
 ## Quick Example
 

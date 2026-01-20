@@ -1,19 +1,19 @@
 ---
 title: "Overview"
 description: "Enable your AI agents to react instantly to incoming emails"
-icon: "eye"
+icon: "/icons-svg/webhook.svg"
 ---
 
 ## What are Webhooks?
 
-Webhooks are the trigger mechanism that awakens your AI agent. Instead of your agent constantly checking for new emails, webhooks notify it instantly when something happens—a new email arrives, a message bounces, or a delivery fails.
+Webhooks are the trigger mechanism that awakens your AI agent. Instead of your agent constantly checking for new emails, webhooks notify it instantly when something happens-a new email arrives, a message bounces, or a delivery fails.
 
 <CardGroup cols={2}>
   <Card title="Instant Awareness" icon="/icons-svg/refresh.svg">
     Your agent knows the moment an email arrives
   </Card>
   <Card title="Resource Efficient" icon="/icons-svg/check.svg">
-    No wasted cycles polling—agents only wake when needed
+    No wasted cycles polling-agents only wake when needed
   </Card>
   <Card title="Secure" icon="/icons-svg/keys.svg">
     Signed payloads ensure events are authentic
@@ -25,94 +25,106 @@ Webhooks are the trigger mechanism that awakens your AI agent. Instead of your a
 
 ## Quick Start
 
-### 1. Create a Webhook Endpoint
+### 1. Register a Webhook
 
-Create an HTTP endpoint that will wake your agent when events occur:
+<Tabs>
+  <Tab title="TypeScript">
+```typescript
+import { Jasni } from 'jasni-sdk'
 
-```javascript
-// Express.js example
-app.post('/webhooks/jasni', express.json(), async (req, res) => {
-  const { event, data } = req.body;
-  
-  console.log(`Agent notified of ${event}`);
-  
-  // Trigger your AI agent
-  switch (event) {
-    case 'email.received':
-      await agent.processIncomingEmail(data);
-      break;
-    case 'email.sent':
-      await agent.confirmDelivery(data);
-      break;
-  }
-  
-  // Always respond with 200
-  res.status(200).send('OK');
-});
+const jasni = new Jasni('jsk_your_api_key')
+
+const { webhook } = await jasni.webhooks.create({
+  url: 'https://your-server.com/webhooks/jasni',
+  events: ['email.received', 'email.sent'],
+})
+
+// IMPORTANT: Save the secret - only returned on creation
+console.log('Secret:', webhook.secret)
 ```
+  </Tab>
+  <Tab title="Python">
+```python
+from jasni import Jasni
 
-### 2. Register the Webhook
+jasni = Jasni("jsk_your_api_key")
 
-Use the API to register your endpoint:
+result = jasni.webhooks.create(
+    url="https://your-server.com/webhooks/jasni",
+    events=["email.received", "email.sent"],
+)
 
-```bash
-curl -X POST https://api.jasni.ai/api/v1/webhooks \
-  -H "Authorization: Bearer jsk_your_api_key" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url": "https://your-server.com/webhooks/jasni",
-    "events": ["email.received", "email.sent"]
-  }'
+# IMPORTANT: Save the secret - only returned on creation
+print(f"Secret: {result.webhook.secret}")
 ```
+  </Tab>
+</Tabs>
 
-### 3. Save the Secret
+<Warning>
+  **Save your webhook secret!** The `secret` is only returned when the webhook is created. You'll need it to verify incoming webhook payloads.
+</Warning>
 
-The response includes a `secret` - save it securely:
+### 2. Handle Incoming Webhooks
 
-```json
-{
-  "success": true,
-  "data": {
-    "webhook": {
-      "id": "webhook-id",
-      "secret": "whsec_abc123..."
-    }
-  }
-}
-```
-
-### 4. Verify Signatures
-
-Always verify that webhooks are from Jasni:
-
-```javascript
-const crypto = require('crypto');
-
-function verifySignature(payload, signature, secret) {
-  const expected = crypto
-    .createHmac('sha256', secret)
-    .update(payload)
-    .digest('hex');
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expected)
-  );
-}
+<Tabs>
+  <Tab title="TypeScript (Express)">
+```typescript
+import { verifySignature } from 'jasni-sdk'
 
 app.post('/webhooks/jasni', express.raw({ type: 'application/json' }), (req, res) => {
-  const signature = req.headers['x-webhook-signature'];
-  const payload = req.body.toString();
+  const signature = req.headers['x-jasni-signature'] as string
+  const payload = req.body.toString()
   
-  if (!verifySignature(payload, signature, process.env.WEBHOOK_SECRET)) {
-    return res.status(401).send('Invalid signature');
+  if (!verifySignature(payload, signature, process.env.WEBHOOK_SECRET!)) {
+    return res.status(401).send('Invalid signature')
   }
   
-  // Process verified webhook
-  const data = JSON.parse(payload);
-  // ...
-});
+  const event = JSON.parse(payload)
+  
+  switch (event.event) {
+    case 'email.received':
+      console.log('New email from:', event.data.from)
+      break
+    case 'email.sent':
+      console.log('Email sent to:', event.data.to)
+      break
+  }
+  
+  res.status(200).send('OK')
+})
 ```
+  </Tab>
+  <Tab title="Python (FastAPI)">
+```python
+from fastapi import FastAPI, Request, HTTPException
+from jasni.webhooks import verify_signature
+
+app = FastAPI()
+
+@app.post("/webhooks/jasni")
+async def handle_webhook(request: Request):
+    signature = request.headers.get("X-Jasni-Signature")
+    payload = await request.body()
+    
+    if not verify_signature(payload, signature, WEBHOOK_SECRET):
+        raise HTTPException(status_code=401, detail="Invalid signature")
+    
+    event = await request.json()
+    
+    match event["event"]:
+        case "email.received":
+            print(f"New email from: {event['data']['from']}")
+        case "email.sent":
+            print(f"Email sent to: {event['data']['to']}")
+    
+    return {"status": "ok"}
+```
+  </Tab>
+</Tabs>
+
+<Tip>
+  The `verifySignature()` helper handles timestamp validation and HMAC verification automatically.
+</Tip>
 
 ## Available Events
 
@@ -120,9 +132,12 @@ app.post('/webhooks/jasni', express.raw({ type: 'application/json' }), (req, res
 |-------|---------|
 | `email.received` | New email arrives in mailbox |
 | `email.sent` | Email sent successfully |
+| `email.delivered` | Email delivered to recipient's server |
 | `email.bounced` | Email delivery failed |
 | `email.spam` | Email marked as spam |
+| `email.rejected` | Email rejected before delivery |
 | `email.deleted` | Email was deleted |
+| `domain.verified` | Custom domain verified |
 
 <Card title="Event Reference" icon="/icons-svg/info.svg" href="/webhooks/events">
   See detailed payload schemas for each event
@@ -157,9 +172,7 @@ Each webhook request includes:
 | Header | Description |
 |--------|-------------|
 | `Content-Type` | `application/json` |
-| `X-Webhook-Signature` | HMAC-SHA256 signature |
-| `X-Webhook-Timestamp` | Unix timestamp |
-| `X-Webhook-Event` | Event type |
+| `X-Jasni-Signature` | Signature in format `t=timestamp,v1=signature` |
 | `User-Agent` | `JasniAI-Webhooks/1.0` |
 
 ## Retry Policy
@@ -187,7 +200,7 @@ After 3 failed retries, the delivery is marked as failed.
   </Accordion>
   
   <Accordion title="Always verify signatures" icon="/icons-svg/keys.svg">
-    Verify the `X-Webhook-Signature` header to ensure events are genuinely from Jasni—not spoofed.
+    Verify the `X-Jasni-Signature` header to ensure events are genuinely from Jasni—not spoofed.
   </Accordion>
   
   <Accordion title="Use HTTPS" icon="/icons-svg/world.svg">
@@ -197,17 +210,14 @@ After 3 failed retries, the delivery is marked as failed.
 
 ## Next Steps
 
-<CardGroup cols={2}>
-  <Card title="Events" icon="/icons-svg/info.svg" href="/webhooks/events">
-    Payload schemas
+<CardGroup cols={3}>
+  <Card title="Events Reference" icon="/icons-svg/info.svg" href="/webhooks/events">
+    Detailed payload schemas for each event
   </Card>
   <Card title="Security" icon="/icons-svg/keys.svg" href="/webhooks/security">
-    Verify signatures
+    Signature verification deep dive
   </Card>
   <Card title="Best Practices" icon="/icons-svg/check.svg" href="/webhooks/best-practices">
-    Production tips
-  </Card>
-  <Card title="Create Webhook" icon="/icons-svg/plus.svg" href="/api-reference/webhooks/create">
-    API endpoint
+    Production deployment tips
   </Card>
 </CardGroup>

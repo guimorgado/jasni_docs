@@ -1,7 +1,7 @@
 ---
 title: "API Reference"
 description: "Complete API reference for giving your AI agents email capabilities"
-icon: "/icons-svg/docs.svg"
+icon: "/icons-svg/code.svg"
 ---
 
 ## Base URL
@@ -89,6 +89,15 @@ GET /api/v1/emails?account=you@domain.com&limit=20
 
 ## Endpoints
 
+### Accounts
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/accounts` | List email accounts |
+| POST | `/accounts` | Create email account |
+| PATCH | `/accounts` | Update email account |
+| DELETE | `/accounts` | Delete email account |
+
 ### Emails
 
 | Method | Endpoint | Description |
@@ -101,18 +110,37 @@ GET /api/v1/emails?account=you@domain.com&limit=20
 | PATCH | `/emails/{id}` | [Update email](/api-reference/emails/update) |
 | DELETE | `/emails/{id}` | [Delete email](/api-reference/emails/delete) |
 
+### Drafts
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/emails/drafts` | List drafts |
+| POST | `/emails/drafts` | Save draft |
+| PUT | `/emails/drafts` | Update draft |
+| DELETE | `/emails/drafts` | Delete draft |
+
+### Email Labels
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/emails/{id}/labels` | Get labels for an email |
+| POST | `/emails/{id}/labels` | Assign labels to an email |
+| DELETE | `/emails/{id}/labels` | Remove labels from an email |
+
 ### Labels
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/labels` | [List labels](/api-reference/labels/list) |
 | POST | `/labels` | [Create label](/api-reference/labels/create) |
+| DELETE | `/labels` | Delete label |
 
 ### Webhooks
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/webhooks` | [List webhooks](/api-reference/webhooks/list) |
+| GET | `/webhooks/{id}` | [Get webhook](/api-reference/webhooks/get) |
 | POST | `/webhooks` | [Create webhook](/api-reference/webhooks/create) |
 | PATCH | `/webhooks` | [Update webhook](/api-reference/webhooks/update) |
 | DELETE | `/webhooks` | [Delete webhook](/api-reference/webhooks/delete) |
@@ -151,6 +179,6 @@ console.log(data);
 
 ## Need Help?
 
-<Card title="Contact Support" icon="life-ring" href="mailto:support@jasni.ai">
+<Card title="Contact Support" icon="/icons-svg/life-ring.svg" href="mailto:support@jasni.ai">
   Have questions? Our support team is here to help.
 </Card>

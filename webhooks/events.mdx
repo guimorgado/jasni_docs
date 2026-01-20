@@ -1,7 +1,7 @@
 ---
 title: "Events"
 description: "Detailed reference for all webhook event types and their payloads"
-icon: "bell"
+icon: "/icons-svg/bolt.svg"
 ---
 
 ## Event Structure
@@ -388,57 +388,94 @@ Triggered when a custom domain is successfully verified.
 
 Handle all events in one endpoint:
 
-```javascript
-app.post('/webhooks/jasni', async (req, res) => {
-  const { event, timestamp, data } = req.body;
+<Tabs>
+  <Tab title="TypeScript">
+```typescript
+import { verifySignature } from 'jasni-sdk'
+import express from 'express'
+
+const app = express()
+
+app.post('/webhooks/jasni', express.raw({ type: 'application/json' }), async (req, res) => {
+  const signature = req.headers['x-jasni-signature'] as string
+  const payload = req.body.toString()
   
-  console.log(`[${timestamp}] ${event}`);
+  if (!verifySignature(payload, signature, process.env.WEBHOOK_SECRET!)) {
+    return res.status(401).send('Invalid signature')
+  }
+  
+  res.status(200).send('OK')
+  
+  const { event, timestamp, data } = JSON.parse(payload)
+  console.log(`[${timestamp}] ${event}`)
   
   switch (event) {
     case 'email.received':
-      // New email arrived
-      await processIncomingEmail(data);
-      break;
-      
+      await processIncomingEmail(data)
+      break
     case 'email.sent':
-      // Email sent successfully
-      await logSentEmail(data);
-      break;
-      
+      await logSentEmail(data)
+      break
     case 'email.delivered':
-      // Email delivered to recipient server
-      await confirmDelivery(data);
-      break;
-      
+      await confirmDelivery(data)
+      break
     case 'email.bounced':
-      // Email failed to deliver
-      await handleBounce(data);
-      break;
-      
+      await handleBounce(data)
+      break
     case 'email.spam':
-      // Recipient marked as spam
-      await handleComplaint(data);
-      break;
-      
+      await handleComplaint(data)
+      break
     case 'email.rejected':
-      // Email rejected before delivery
-      await handleRejection(data);
-      break;
-      
+      await handleRejection(data)
+      break
     case 'email.deleted':
-      // Email deleted
-      await syncDeletion(data);
-      break;
-      
+      await syncDeletion(data)
+      break
     case 'domain.verified':
-      // Custom domain verified
-      await notifyDomainVerified(data);
-      break;
-      
-    default:
-      console.log('Unknown event:', event);
+      await notifyDomainVerified(data)
+      break
   }
-  
-  res.status(200).send('OK');
-});
+})
 ```
+  </Tab>
+  <Tab title="Python">
+```python
+from fastapi import FastAPI, Request, HTTPException
+from jasni.webhooks import verify_signature
+import os
+
+app = FastAPI()
+
+@app.post("/webhooks/jasni")
+async def handle_webhook(request: Request):
+    signature = request.headers.get("X-Jasni-Signature")
+    payload = await request.body()
+    
+    if not verify_signature(payload, signature, os.environ.get("WEBHOOK_SECRET")):
+        raise HTTPException(status_code=401, detail="Invalid signature")
+    
+    event = await request.json()
+    print(f"[{event['timestamp']}] {event['event']}")
+    
+    match event["event"]:
+        case "email.received":
+            await process_incoming_email(event["data"])
+        case "email.sent":
+            await log_sent_email(event["data"])
+        case "email.delivered":
+            await confirm_delivery(event["data"])
+        case "email.bounced":
+            await handle_bounce(event["data"])
+        case "email.spam":
+            await handle_complaint(event["data"])
+        case "email.rejected":
+            await handle_rejection(event["data"])
+        case "email.deleted":
+            await sync_deletion(event["data"])
+        case "domain.verified":
+            await notify_domain_verified(event["data"])
+    
+    return {"status": "ok"}
+```
+  </Tab>
+</Tabs>

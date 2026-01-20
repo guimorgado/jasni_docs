@@ -1,7 +1,7 @@
 ---
 title: "Security"
 description: "How to verify webhook signatures and secure your endpoints"
-icon: "shield-check"
+icon: "/icons-svg/keys.svg"
 ---
 
 ## Why Verify Signatures?
@@ -14,181 +14,131 @@ When you receive a webhook, you need to verify it actually came from Jasni and h
 
 ## Signature Verification
 
-Every webhook request includes a signature in the `X-Webhook-Signature` header. This signature is an HMAC-SHA256 hash of the request body, signed with your webhook secret.
+Every webhook request includes a signature in the `X-Jasni-Signature` header. This signature follows the format `t=timestamp,v1=signature` where:
+
+- `t` is the Unix timestamp when the webhook was sent
+- `v1` is the HMAC-SHA256 signature
 
 ### How It Works
 
 ```
-Signature = HMAC-SHA256(request_body, webhook_secret)
+SignedPayload = timestamp + "." + request_body
+Signature = HMAC-SHA256(SignedPayload, webhook_secret)
+Header = "t=" + timestamp + ",v1=" + Signature
 ```
 
 1. Jasni creates the request body (JSON payload)
-2. Computes HMAC-SHA256 using your webhook secret
-3. Includes the signature in the `X-Webhook-Signature` header
-4. Sends the request to your endpoint
+2. Prepends the timestamp to the payload: `timestamp.payload`
+3. Computes HMAC-SHA256 of the combined string using your webhook secret
+4. Includes the signature in the `X-Jasni-Signature` header as `t=timestamp,v1=signature`
+5. Sends the request to your endpoint
 
 ### Verification Steps
 
-1. Get the signature from the header
-2. Compute your own HMAC-SHA256 of the raw body
-3. Compare signatures using a timing-safe function
-4. Reject if they don't match
+1. Parse the `X-Jasni-Signature` header to extract `t` (timestamp) and `v1` (signature)
+2. Check if the timestamp is within tolerance (e.g., 5 minutes) to prevent replay attacks
+3. Reconstruct the signed payload: `timestamp.raw_body`
+4. Compute your own HMAC-SHA256 of the signed payload
+5. Compare signatures using a timing-safe function
+6. Reject if they don't match
 
 ## Implementation
 
+The Jasni SDKs provide built-in signature verification helpers that handle all the complexity for you:
+
 <Tabs>
-  <Tab title="Node.js">
-    ```javascript
-    const crypto = require('crypto');
+  <Tab title="TypeScript">
+    ```typescript
+    import { verifySignature, constructEvent } from 'jasni-sdk'
+    import express from 'express'
 
-    function verifyWebhookSignature(payload, signature, secret) {
-      const expectedSignature = crypto
-        .createHmac('sha256', secret)
-        .update(payload)
-        .digest('hex');
-      
-      // Use timing-safe comparison to prevent timing attacks
-      return crypto.timingSafeEqual(
-        Buffer.from(signature),
-        Buffer.from(expectedSignature)
-      );
-    }
+    const app = express()
 
-    // Express.js middleware
-    function webhookMiddleware(req, res, next) {
-      const signature = req.headers['x-webhook-signature'];
-      const timestamp = req.headers['x-webhook-timestamp'];
-      const payload = req.rawBody; // Need raw body, not parsed JSON
+    // Option 1: Using verifySignature
+    app.post('/webhooks/jasni', express.raw({ type: 'application/json' }), (req, res) => {
+      const signature = req.headers['x-jasni-signature'] as string
+      const payload = req.body.toString()
       
-      if (!signature) {
-        return res.status(401).json({ error: 'Missing signature' });
+      if (!verifySignature(payload, signature, process.env.WEBHOOK_SECRET!)) {
+        return res.status(401).send('Invalid signature')
       }
       
-      // Optional: Check timestamp to prevent replay attacks
-      const now = Math.floor(Date.now() / 1000);
-      const requestTime = parseInt(timestamp);
-      if (Math.abs(now - requestTime) > 300) { // 5 minute tolerance
-        return res.status(401).json({ error: 'Request too old' });
-      }
+      const event = JSON.parse(payload)
+      console.log('Verified event:', event.event)
       
-      if (!verifyWebhookSignature(payload, signature, process.env.WEBHOOK_SECRET)) {
-        return res.status(401).json({ error: 'Invalid signature' });
-      }
-      
-      next();
-    }
+      res.status(200).send('OK')
+    })
 
-    // Usage with Express
-    app.post('/webhooks/jasni', 
-      express.raw({ type: 'application/json' }),
-      webhookMiddleware,
-      (req, res) => {
-        const event = JSON.parse(req.rawBody);
-        // Process verified event
-        res.status(200).send('OK');
+    // Option 2: Using constructEvent (verifies and parses in one step)
+    app.post('/webhooks/jasni', express.raw({ type: 'application/json' }), (req, res) => {
+      try {
+        const event = constructEvent(
+          req.body,
+          req.headers['x-jasni-signature'] as string,
+          process.env.WEBHOOK_SECRET!
+        )
+        
+        console.log('Verified event:', event.event)
+        res.status(200).send('OK')
+      } catch (err) {
+        return res.status(401).send('Invalid signature')
       }
-    );
+    })
     ```
   </Tab>
   
-  <Tab title="Python">
+  <Tab title="Python (Flask)">
     ```python
-    import hmac
-    import hashlib
-    import time
     from flask import Flask, request, jsonify
+    from jasni.webhooks import verify_signature
+    import os
 
     app = Flask(__name__)
     WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET')
 
-    def verify_webhook_signature(payload: bytes, signature: str, secret: str) -> bool:
-        expected = hmac.new(
-            secret.encode('utf-8'),
-            payload,
-            hashlib.sha256
-        ).hexdigest()
-        
-        # Use compare_digest for timing-safe comparison
-        return hmac.compare_digest(signature, expected)
-
     @app.route('/webhooks/jasni', methods=['POST'])
     def handle_webhook():
-        signature = request.headers.get('X-Webhook-Signature')
-        timestamp = request.headers.get('X-Webhook-Timestamp')
-        payload = request.get_data()
+        signature = request.headers.get('X-Jasni-Signature')
+        payload = request.get_data()  # Use raw body
         
-        if not signature:
-            return jsonify({'error': 'Missing signature'}), 401
-        
-        # Optional: Check timestamp for replay protection
-        now = int(time.time())
-        request_time = int(timestamp)
-        if abs(now - request_time) > 300:  # 5 minute tolerance
-            return jsonify({'error': 'Request too old'}), 401
-        
-        if not verify_webhook_signature(payload, signature, WEBHOOK_SECRET):
+        if not verify_signature(payload, signature, WEBHOOK_SECRET):
             return jsonify({'error': 'Invalid signature'}), 401
         
-        # Process verified event
         event = request.get_json()
-        print(f"Received: {event['event']}")
+        print(f"Verified event: {event['event']}")
         
         return 'OK', 200
     ```
   </Tab>
   
-  <Tab title="Go">
-    ```go
-    package main
+  <Tab title="Python (FastAPI)">
+    ```python
+    from fastapi import FastAPI, Request, HTTPException
+    from jasni.webhooks import verify_signature
+    import os
 
-    import (
-        "crypto/hmac"
-        "crypto/sha256"
-        "encoding/hex"
-        "io"
-        "net/http"
-        "os"
-        "strconv"
-        "time"
-    )
+    app = FastAPI()
+    WEBHOOK_SECRET = os.environ.get('WEBHOOK_SECRET')
 
-    func verifySignature(payload []byte, signature, secret string) bool {
-        mac := hmac.New(sha256.New, []byte(secret))
-        mac.Write(payload)
-        expected := hex.EncodeToString(mac.Sum(nil))
-        return hmac.Equal([]byte(signature), []byte(expected))
-    }
-
-    func webhookHandler(w http.ResponseWriter, r *http.Request) {
-        signature := r.Header.Get("X-Webhook-Signature")
-        timestamp := r.Header.Get("X-Webhook-Timestamp")
+    @app.post("/webhooks/jasni")
+    async def handle_webhook(request: Request):
+        signature = request.headers.get("X-Jasni-Signature")
+        payload = await request.body()  # Use raw body
         
-        if signature == "" {
-            http.Error(w, "Missing signature", http.StatusUnauthorized)
-            return
-        }
+        if not verify_signature(payload, signature, WEBHOOK_SECRET):
+            raise HTTPException(status_code=401, detail="Invalid signature")
         
-        // Check timestamp
-        ts, _ := strconv.ParseInt(timestamp, 10, 64)
-        if time.Now().Unix()-ts > 300 {
-            http.Error(w, "Request too old", http.StatusUnauthorized)
-            return
-        }
+        event = await request.json()
+        print(f"Verified event: {event['event']}")
         
-        payload, _ := io.ReadAll(r.Body)
-        
-        if !verifySignature(payload, signature, os.Getenv("WEBHOOK_SECRET")) {
-            http.Error(w, "Invalid signature", http.StatusUnauthorized)
-            return
-        }
-        
-        // Process verified event
-        w.WriteHeader(http.StatusOK)
-        w.Write([]byte("OK"))
-    }
+        return {"status": "ok"}
     ```
   </Tab>
 </Tabs>
+
+<Tip>
+  The `verifySignature()` helper automatically handles timestamp validation (5-minute tolerance) and uses timing-safe comparison to prevent timing attacks.
+</Tip>
 
 ## Important Considerations
 
@@ -198,44 +148,38 @@ Signature = HMAC-SHA256(request_body, webhook_secret)
   You must use the **raw request body** for signature verification, not a parsed/serialized version. JSON parsing and re-serialization can change whitespace, key order, etc.
 </Warning>
 
-```javascript
+<Tabs>
+  <Tab title="TypeScript">
+```typescript
 // ❌ WRONG - body has been parsed and re-serialized
-const payload = JSON.stringify(req.body);
+const payload = JSON.stringify(req.body)
 
-// ✅ CORRECT - use raw body
-const payload = req.rawBody;
+// ✅ CORRECT - use raw body with express.raw()
+app.post('/webhooks/jasni', express.raw({ type: 'application/json' }), (req, res) => {
+  const payload = req.body.toString()
+  // ...
+})
 ```
+  </Tab>
+  <Tab title="Python">
+```python
+# ❌ WRONG - body has been parsed
+payload = json.dumps(request.json)
 
-### Timing-Safe Comparison
-
-<Warning>
-  Always use timing-safe comparison functions. Regular string comparison (`===`) is vulnerable to timing attacks.
-</Warning>
-
-```javascript
-// ❌ WRONG - vulnerable to timing attacks
-return signature === expectedSignature;
-
-// ✅ CORRECT - timing-safe comparison
-return crypto.timingSafeEqual(
-  Buffer.from(signature),
-  Buffer.from(expectedSignature)
-);
+# ✅ CORRECT - use raw body
+payload = request.get_data()  # Flask
+payload = await request.body()  # FastAPI
 ```
+  </Tab>
+</Tabs>
 
-### Timestamp Validation
+### What the SDK Handles Automatically
 
-Optionally check the `X-Webhook-Timestamp` header to prevent replay attacks:
+The `verifySignature()` helper handles these security concerns for you:
 
-```javascript
-const timestamp = parseInt(req.headers['x-webhook-timestamp']);
-const now = Math.floor(Date.now() / 1000);
-
-// Reject requests older than 5 minutes
-if (Math.abs(now - timestamp) > 300) {
-  return res.status(401).send('Request too old');
-}
-```
+- **Timing-safe comparison** - Prevents timing attacks by using constant-time comparison
+- **Timestamp validation** - Rejects requests older than 5 minutes to prevent replay attacks
+- **Signature parsing** - Correctly parses the `t=timestamp,v1=signature` format
 
 ## Protecting Your Secret
 
@@ -266,27 +210,41 @@ if (Math.abs(now - timestamp) > 300) {
   </Accordion>
 </AccordionGroup>
 
-## Testing Signatures
+## Testing Your Integration
 
-Test your verification with this script:
+The easiest way to test your webhook integration is to:
 
-```javascript
-const crypto = require('crypto');
+1. **Create a test webhook** pointing to your local endpoint (use [ngrok](https://ngrok.com) for local development)
+2. **Trigger a real event** by sending an email to your Jasni account
+3. **Check your logs** to verify the webhook was received and verified
 
-const secret = 'whsec_test_secret';
-const payload = JSON.stringify({
-  event: 'email.received',
-  timestamp: new Date().toISOString(),
-  data: { id: '123', from: 'test@example.com' }
-});
+<Tabs>
+  <Tab title="TypeScript">
+```typescript
+import { verifySignature } from 'jasni-sdk'
 
-const signature = crypto
-  .createHmac('sha256', secret)
-  .update(payload)
-  .digest('hex');
+// In your tests, you can verify that your endpoint correctly validates signatures
+const isValid = verifySignature(
+  testPayload,
+  testSignature,
+  process.env.WEBHOOK_SECRET!
+)
 
-console.log('Payload:', payload);
-console.log('Signature:', signature);
-
-// Use these to test your verification endpoint
+console.log('Signature valid:', isValid)
 ```
+  </Tab>
+  <Tab title="Python">
+```python
+from jasni.webhooks import verify_signature
+
+# In your tests, you can verify that your endpoint correctly validates signatures
+is_valid = verify_signature(
+    test_payload,
+    test_signature,
+    os.environ.get('WEBHOOK_SECRET')
+)
+
+print(f"Signature valid: {is_valid}")
+```
+  </Tab>
+</Tabs>

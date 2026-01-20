@@ -71,9 +71,12 @@ console.log('Webhook Secret:', webhook.secret)
 |-------|-------------|
 | `email.received` | New email received |
 | `email.sent` | Email sent |
+| `email.delivered` | Email delivered to recipient's server |
 | `email.bounced` | Email bounced |
 | `email.spam` | Email marked as spam |
+| `email.rejected` | Email rejected before delivery |
 | `email.deleted` | Email deleted |
+| `domain.verified` | Custom domain verified |
 
 ### Response
 
@@ -172,41 +175,25 @@ manageWebhooks().catch(console.error)
 
 ## Verifying Webhook Signatures
 
-When receiving webhook payloads, verify the signature to ensure they're from Jasni:
+The SDK provides helper functions to verify webhook signatures. Jasni uses the format `t=timestamp,v1=signature` in the `X-Jasni-Signature` header:
 
 ```typescript
-import crypto from 'crypto'
+import { verifySignature, constructEvent } from 'jasni-sdk'
 
-function verifyWebhookSignature(
-  payload: string,
-  signature: string,
-  secret: string
-): boolean {
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(payload)
-    .digest('hex')
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  )
-}
-
-// In your webhook handler (Express example)
-app.post('/jasni-webhook', (req, res) => {
+// Option 1: Using verifySignature
+app.post('/jasni-webhook', express.raw({ type: 'application/json' }), (req, res) => {
   const signature = req.headers['x-jasni-signature'] as string
-  const payload = JSON.stringify(req.body)
+  const payload = req.body.toString()  // Use raw body, not JSON.stringify
   
-  if (!verifyWebhookSignature(payload, signature, process.env.JASNI_WEBHOOK_SECRET!)) {
+  if (!verifySignature(payload, signature, process.env.JASNI_WEBHOOK_SECRET!)) {
     return res.status(401).send('Invalid signature')
   }
   
   // Process the webhook
-  const event = req.body
-  console.log('Received event:', event.type)
+  const event = JSON.parse(payload)
+  console.log('Received event:', event.event)
   
-  switch (event.type) {
+  switch (event.event) {
     case 'email.received':
       console.log('New email from:', event.data.from)
       break
@@ -214,11 +201,30 @@ app.post('/jasni-webhook', (req, res) => {
       console.log('Email sent to:', event.data.to)
       break
     case 'email.bounced':
-      console.log('Email bounced:', event.data.bounce_reason)
+      console.log('Email bounced:', event.data.bounceReason)
       break
   }
   
   res.status(200).send('OK')
+})
+
+// Option 2: Using constructEvent (verifies and parses in one step)
+app.post('/jasni-webhook', express.raw({ type: 'application/json' }), (req, res) => {
+  try {
+    const event = constructEvent(
+      req.body,
+      req.headers['x-jasni-signature'] as string,
+      process.env.JASNI_WEBHOOK_SECRET!
+    )
+    
+    console.log('Received event:', event.event)
+    // Handle the event...
+    
+    res.status(200).send('OK')
+  } catch (err) {
+    console.error('Invalid webhook:', err.message)
+    res.status(401).send('Invalid signature')
+  }
 })
 ```
 
@@ -228,16 +234,17 @@ All webhook payloads follow this structure:
 
 ```typescript
 interface WebhookPayload {
-  id: string           // Unique event ID
-  type: WebhookEvent   // Event type
-  created_at: string   // ISO timestamp
+  event: string        // Event type (e.g., 'email.received')
+  timestamp: string    // ISO timestamp when event occurred
   data: {
-    account: string    // Email account
-    uid: number        // Email UID
-    message_id: string // Message ID
-    from: string       // Sender
-    to: string[]       // Recipients
-    subject: string    // Subject
+    // Fields vary by event type
+    // For email events:
+    id?: string        // Email ID
+    messageId?: string // RFC 2822 Message-ID
+    account?: string   // Email account
+    from?: string      // Sender
+    to?: string[]      // Recipients
+    subject?: string   // Subject
     // Additional fields based on event type
   }
 }

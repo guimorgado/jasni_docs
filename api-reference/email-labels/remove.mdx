@@ -1,0 +1,122 @@
+---
+title: "Remove Labels"
+api: "DELETE /api/v1/emails/{id}/labels"
+description: "Remove one or more labels from an email"
+---
+
+## Request
+
+<ParamField path="id" type="string" required>
+  Email UID (numeric) or message_id (string)
+</ParamField>
+
+<ParamField query="account" type="string" required>
+  Email account
+</ParamField>
+
+<ParamField query="folder" type="string" default="INBOX">
+  Mailbox folder where the email is located
+</ParamField>
+
+<ParamField query="label_ids" type="string" required>
+  Comma-separated list of label IDs to remove
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if labels were removed successfully
+</ResponseField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="properties">
+    <ResponseField name="removed_count" type="integer">
+      Number of labels removed
+    </ResponseField>
+    <ResponseField name="message_id" type="string">
+      The message ID of the email
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE "https://api.jasni.ai/api/v1/emails/12345/labels?account=you@domain.com&label_ids=550e8400-e29b-41d4-a716-446655440000,550e8400-e29b-41d4-a716-446655440001" \
+  -H "Authorization: Bearer jsk_your_api_key"
+```
+
+```javascript JavaScript
+const labelIds = ['550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440001'];
+
+const response = await fetch(
+  `https://api.jasni.ai/api/v1/emails/12345/labels?account=you@domain.com&label_ids=${labelIds.join(',')}`,
+  {
+    method: 'DELETE',
+    headers: {
+      'Authorization': 'Bearer jsk_your_api_key',
+    },
+  }
+);
+
+const data = await response.json();
+console.log(`Removed ${data.data.removed_count} labels`);
+```
+
+```python Python
+import requests
+
+label_ids = [
+    '550e8400-e29b-41d4-a716-446655440000',
+    '550e8400-e29b-41d4-a716-446655440001'
+]
+
+response = requests.delete(
+    'https://api.jasni.ai/api/v1/emails/12345/labels',
+    headers={'Authorization': 'Bearer jsk_your_api_key'},
+    params={
+        'account': 'you@domain.com',
+        'label_ids': ','.join(label_ids)
+    }
+)
+
+result = response.json()
+print(f"Removed {result['data']['removed_count']} labels")
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "data": {
+    "removed_count": 2,
+    "message_id": "<abc123@example.com>"
+  },
+  "message": "Labels removed successfully"
+}
+```
+
+```json No labels removed
+{
+  "success": true,
+  "data": {
+    "removed_count": 0,
+    "message_id": "<abc123@example.com>"
+  },
+  "message": "Labels removed successfully"
+}
+```
+
+```json Error - Missing label_ids
+{
+  "success": false,
+  "error": "label_ids parameter is required"
+}
+```
+</ResponseExample>
+
+## Notes
+
+- Only removes the label associations, not the labels themselves
+- Returns `removed_count: 0` if the labels weren't assigned to the email
+- Labels that don't exist are silently ignored

@@ -12,7 +12,7 @@ Retrieve emails from a folder:
 
 ```typescript
 const { emails, total, folder, account } = await jasni.emails.list({
-  account: 'me@mail.jasni.ai',
+  account: 'me@jasnimail.com',
   folder: 'INBOX',  // Optional: default is INBOX
   limit: 50,        // Optional: default is 50, max 100
 })
@@ -59,7 +59,7 @@ Retrieve a specific email by UID:
 
 ```typescript
 const { email } = await jasni.emails.get(123, {
-  account: 'me@mail.jasni.ai',
+  account: 'me@jasnimail.com',
   folder: 'INBOX',  // Optional
 })
 
@@ -98,7 +98,7 @@ Send a new email:
 
 ```typescript
 const result = await jasni.emails.send({
-  from: 'me@mail.jasni.ai',
+  from: 'me@jasnimail.com',
   to: ['recipient@example.com'],
   subject: 'Hello!',
   text: 'Plain text body',
@@ -128,6 +128,10 @@ console.log('Message ID:', result.messageId)
   You must provide at least `text` or `html` for the email body.
 </Note>
 
+<Warning>
+  **Attachments**: Sending attachments via the API is coming soon. See the [Attachments](/concepts/attachments) page for details on downloading attachments from received emails.
+</Warning>
+
 ### Response
 
 ```typescript
@@ -146,7 +150,7 @@ Reply to an existing email:
 
 ```typescript
 const reply = await jasni.emails.reply(123, {
-  account: 'me@mail.jasni.ai',
+  account: 'me@jasnimail.com',
   text: 'Thanks for your email!',
   replyAll: false,         // Optional: default false
   includeOriginal: true,   // Optional: default true
@@ -187,7 +191,7 @@ Forward an email to other recipients:
 
 ```typescript
 const forward = await jasni.emails.forward(123, {
-  account: 'me@mail.jasni.ai',
+  account: 'me@jasnimail.com',
   to: ['forward@example.com'],
   text: 'FYI - see below',  // Optional message
   cc: ['cc@example.com'],   // Optional
@@ -234,7 +238,7 @@ Delete an email:
 
 ```typescript
 await jasni.emails.delete(123, {
-  account: 'me@mail.jasni.ai',
+  account: 'me@jasnimail.com',
 })
 ```
 
@@ -244,10 +248,10 @@ Update the read status of an email:
 
 ```typescript
 // Mark as read
-await jasni.emails.markAsRead(123, { account: 'me@mail.jasni.ai' })
+await jasni.emails.markAsRead(123, { account: 'me@jasnimail.com' })
 
 // Mark as unread
-await jasni.emails.markAsUnread(123, { account: 'me@mail.jasni.ai' })
+await jasni.emails.markAsUnread(123, { account: 'me@jasnimail.com' })
 ```
 
 ## Email Labels
@@ -268,7 +272,7 @@ import { Jasni } from 'jasni-sdk'
 const jasni = new Jasni('jsk_your_api_key')
 
 async function emailWorkflow() {
-  const account = 'me@mail.jasni.ai'
+  const account = 'me@jasnimail.com'
   
   // List recent emails
   const { emails } = await jasni.emails.list({

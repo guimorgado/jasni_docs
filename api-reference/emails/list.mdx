@@ -2,7 +2,6 @@
 title: "List Emails"
 api: "GET /api/v1/emails"
 description: "Retrieve a list of emails from a specified email account"
-icon: "/icons-svg/search.svg"
 ---
 
 ## Request
@@ -17,6 +16,14 @@ icon: "/icons-svg/search.svg"
 
 <ParamField query="limit" type="integer" default="50">
   Number of emails to fetch (max 100)
+</ParamField>
+
+<ParamField query="label_ids" type="string">
+  Comma-separated list of label IDs to filter by. Emails must have **all** specified labels.
+</ParamField>
+
+<ParamField query="labels" type="string">
+  Comma-separated list of label names to filter by. Emails must have **all** specified labels.
 </ParamField>
 
 ## Response
@@ -137,3 +144,5 @@ data = response.json()
 - The `limit` parameter has a maximum value of 100
 - Emails are returned in reverse chronological order (newest first)
 - The `flags` array contains IMAP flags like `\Seen` (read), `\Flagged` (starred), etc.
+- When filtering by labels, emails must have **all** specified labels to be included in the results
+- You can use either `label_ids` or `labels` (or both) to filter emails

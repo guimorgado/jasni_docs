@@ -4,7 +4,7 @@ description: "Manage email accounts with the Jasni Python SDK"
 icon: "/icons-svg/inbox.svg"
 ---
 
-The `accounts` resource allows you to create, list, and delete email accounts associated with your Jasni account.
+The `accounts` resource allows you to create, list, update, and delete email accounts associated with your Jasni account.
 
 ## List Accounts
 
@@ -48,7 +48,7 @@ result = jasni.accounts.create(
     username="support",
     name="Support Team"
 )
-# Result: support@mail.jasni.ai
+# Result: support@jasnimail.com
 ```
 
 ### Options
@@ -67,22 +67,50 @@ class CreateAccountResponse:
     message: str
 ```
 
+## Update Account
+
+Update an email account's display name:
+
+```python
+result = jasni.accounts.update(
+    "support@jasnimail.com",
+    name="Customer Support Team"
+)
+print(f"Updated: {result.account.name}")
+```
+
+### Options
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `email` | `str` | Yes | The email address of the account to update |
+| `name` | `str` | Yes | New display name for the account |
+
+### Response
+
+```python
+@dataclass
+class UpdateAccountResponse:
+    account: Account
+    message: str
+```
+
 ## Delete Account
 
 Delete an email account:
 
 ```python
-result = jasni.accounts.delete("support@mail.jasni.ai")
-print(result["message"])  # "Account deleted successfully"
+result = jasni.accounts.delete("support@jasnimail.com")
+print(result.message)  # "Account deleted successfully"
 ```
 
 ### Response
 
 ```python
-{
-    "deleted_email": "support@mail.jasni.ai",
-    "message": "Account deleted successfully"
-}
+@dataclass
+class DeleteAccountResponse:
+    deleted_email: str
+    message: str
 ```
 
 <Warning>

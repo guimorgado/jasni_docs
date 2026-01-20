@@ -83,7 +83,7 @@ Get labels assigned to a specific email:
 
 ```typescript
 const { labels, message_id, account } = await jasni.emails.labels.list(123, {
-  account: 'me@mail.jasni.ai',
+  account: 'me@jasnimail.com',
   folder: 'INBOX',  // Optional
 })
 
@@ -122,7 +122,7 @@ Assign labels to an email:
 ```typescript
 // Using label names (creates if they don't exist)
 const result = await jasni.emails.labels.assign(123, {
-  account: 'me@mail.jasni.ai',
+  account: 'me@jasnimail.com',
   labels: ['Important', 'Work'],
   agentName: 'my-agent',  // Optional: for tracking
   metadata: { reason: 'Auto-categorized' },  // Optional
@@ -130,7 +130,7 @@ const result = await jasni.emails.labels.assign(123, {
 
 // Or using existing label IDs
 const result = await jasni.emails.labels.assign(123, {
-  account: 'me@mail.jasni.ai',
+  account: 'me@jasnimail.com',
   labelIds: ['label-id-1', 'label-id-2'],
 })
 
@@ -171,7 +171,7 @@ Remove labels from an email:
 
 ```typescript
 const result = await jasni.emails.labels.remove(123, {
-  account: 'me@mail.jasni.ai',
+  account: 'me@jasnimail.com',
   labelIds: ['label-id-1', 'label-id-2'],
 })
 
@@ -206,7 +206,7 @@ import { Jasni } from 'jasni-sdk'
 const jasni = new Jasni('jsk_your_api_key')
 
 async function labelWorkflow() {
-  const account = 'me@mail.jasni.ai'
+  const account = 'me@jasnimail.com'
   
   // Create some labels
   const { label: importantLabel } = await jasni.labels.create({

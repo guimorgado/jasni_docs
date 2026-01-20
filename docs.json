@@ -2,6 +2,10 @@
   "$schema": "https://mintlify.com/docs.json",
   "theme": "palm",
   "name": "Jasni AI",
+  "appearance": {
+    "default": "light",
+    "strict": true
+  },
   "colors": {
     "primary": "#0ea5e9",
     "light": "#38bdf8",
@@ -36,6 +40,7 @@
             "group": "Guides",
             "pages": [
               "guides/sending-receiving-email",
+              "guides/imap-smtp",
               {
                 "group": "Domains",
                 "icon": "/icons-svg/world.svg",
@@ -54,6 +59,27 @@
               "webhooks/security",
               "webhooks/best-practices"
             ]
+          },
+          {
+            "group": "SDKs & Tools",
+            "pages": [
+              "sdks/mcp/overview"
+            ]
+          },
+          {
+            "group": "Resources",
+            "pages": [
+              "resources/faq",
+              "resources/community",
+              "resources/support",
+              {
+                "group": "Security & Privacy",
+                "icon": "lock",
+                "pages": [
+                  "resources/security/spf-dkim-dmarc"
+                ]
+              }
+            ]
           }
         ]
       },
@@ -64,6 +90,15 @@
             "group": "Overview",
             "pages": [
               "api-reference/introduction"
+            ]
+          },
+          {
+            "group": "Accounts",
+            "pages": [
+              "api-reference/accounts/list",
+              "api-reference/accounts/create",
+              "api-reference/accounts/update",
+              "api-reference/accounts/delete"
             ]
           },
           {
@@ -79,10 +114,28 @@
             ]
           },
           {
+            "group": "Drafts",
+            "pages": [
+              "api-reference/drafts/list",
+              "api-reference/drafts/save",
+              "api-reference/drafts/update",
+              "api-reference/drafts/delete"
+            ]
+          },
+          {
+            "group": "Email Labels",
+            "pages": [
+              "api-reference/email-labels/get",
+              "api-reference/email-labels/assign",
+              "api-reference/email-labels/remove"
+            ]
+          },
+          {
             "group": "Labels",
             "pages": [
               "api-reference/labels/list",
-              "api-reference/labels/create"
+              "api-reference/labels/create",
+              "api-reference/labels/delete"
             ]
           },
           {

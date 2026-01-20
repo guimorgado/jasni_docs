@@ -1,0 +1,125 @@
+---
+title: "Save Draft"
+api: "POST /api/v1/emails/drafts"
+description: "Save a new draft email"
+---
+
+## Request Body
+
+<ParamField body="account" type="string" required>
+  Email account to save draft for
+</ParamField>
+
+<ParamField body="to" type="string">
+  Recipient email address
+</ParamField>
+
+<ParamField body="subject" type="string">
+  Email subject
+</ParamField>
+
+<ParamField body="text" type="string">
+  Plain text body
+</ParamField>
+
+<ParamField body="html" type="string">
+  HTML body
+</ParamField>
+
+<ParamField body="cc" type="string">
+  CC recipients
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if the draft was saved successfully
+</ResponseField>
+
+<ResponseField name="uid" type="integer">
+  UID of the saved draft
+</ResponseField>
+
+<ResponseField name="account" type="string">
+  The email account
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Confirmation message
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.jasni.ai/api/v1/emails/drafts \
+  -H "Authorization: Bearer jsk_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "account": "you@domain.com",
+    "to": "recipient@example.com",
+    "subject": "Follow up on our meeting",
+    "text": "Hi,\n\nI wanted to follow up on..."
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.jasni.ai/api/v1/emails/drafts', {
+  method: 'POST',
+  headers: {
+    'Authorization': 'Bearer jsk_your_api_key',
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    account: 'you@domain.com',
+    to: 'recipient@example.com',
+    subject: 'Follow up on our meeting',
+    text: 'Hi,\n\nI wanted to follow up on...',
+  }),
+});
+
+const data = await response.json();
+console.log('Draft saved with UID:', data.uid);
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    'https://api.jasni.ai/api/v1/emails/drafts',
+    headers={
+        'Authorization': 'Bearer jsk_your_api_key',
+        'Content-Type': 'application/json',
+    },
+    json={
+        'account': 'you@domain.com',
+        'to': 'recipient@example.com',
+        'subject': 'Follow up on our meeting',
+        'text': 'Hi,\n\nI wanted to follow up on...',
+    }
+)
+
+print(f"Draft saved: {response.json()['uid']}")
+```
+</RequestExample>
+
+<ResponseExample>
+```json Success
+{
+  "success": true,
+  "uid": 123,
+  "account": "you@domain.com",
+  "message": "Draft saved successfully"
+}
+```
+
+```json Error - Account not found
+{
+  "error": "Email account not found"
+}
+```
+</ResponseExample>
+
+## Notes
+
+- The draft is saved to the IMAP Drafts folder
+- All fields except `account` are optional
+- You can save an empty draft and update it later

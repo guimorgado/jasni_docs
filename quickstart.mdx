@@ -1,7 +1,7 @@
 ---
 title: "Quickstart"
 description: "Give your AI agent an email inbox in under 5 minutes"
-icon: "/icons-svg/check.svg"
+icon: "/icons-svg/rocket.svg"
 ---
 
 ## Before You Start
@@ -9,8 +9,8 @@ icon: "/icons-svg/check.svg"
 You'll need:
 
 1. A Jasni account - [Sign up free](https://app.jasni.ai)
-2. An API key - Get one from your [dashboard](https://app.jasni.ai/settings/api-keys)
-3. An inbox for your agent (create one in the dashboard or connect an existing account)
+2. An API key - Get one from **Developers** → **API Keys** in your [dashboard](https://app.jasni.ai)
+3. An inbox for your agent (create one in **My Emails** or via the API)
 
 ## Send Your Agent's First Email
 
@@ -71,26 +71,25 @@ You'll need:
     console.log(data);
     ```
   </Tab>
-  <Tab title="Python">
+  <Tab title="Python SDK">
+    ```bash
+    pip install jasni
+    ```
+    
     ```python
-    import requests
+    from jasni import Jasni
 
-    response = requests.post(
-        'https://api.jasni.ai/api/v1/emails/send',
-        headers={
-            'Authorization': 'Bearer jsk_your_api_key',
-            'Content-Type': 'application/json',
-        },
-        json={
-            'from': 'you@yourdomain.com',
-            'to': 'recipient@example.com',
-            'subject': 'Hello from Jasni!',
-            'text': 'This is my first email sent via Jasni API.',
-            'html': '<h1>Hello!</h1><p>This is my first email sent via Jasni API.</p>'
-        }
+    jasni = Jasni('jsk_your_api_key')
+
+    result = jasni.emails.send(
+        from_='you@yourdomain.com',
+        to='recipient@example.com',
+        subject='Hello from Jasni!',
+        text='This is my first email sent via Jasni API.',
+        html='<h1>Hello!</h1><p>This is my first email sent via Jasni API.</p>'
     )
 
-    print(response.json())
+    print('Sent:', result.message_id)
     ```
   </Tab>
 </Tabs>
@@ -153,25 +152,16 @@ Let your agent check its inbox for incoming messages:
     console.log(data.data.emails);
     ```
   </Tab>
-  <Tab title="Python">
+  <Tab title="Python SDK">
     ```python
-    import requests
-
-    response = requests.get(
-        'https://api.jasni.ai/api/v1/emails',
-        headers={
-            'Authorization': 'Bearer jsk_your_api_key',
-        },
-        params={
-            'account': 'you@yourdomain.com',
-            'folder': 'INBOX',
-            'limit': 10
-        }
+    result = jasni.emails.list(
+        account='you@yourdomain.com',
+        folder='INBOX',
+        limit=10
     )
 
-    emails = response.json()['data']['emails']
-    for email in emails:
-        print(f"From: {email['from']} - Subject: {email['subject']}")
+    for email in result.emails:
+        print(f"From: {email.from_} - Subject: {email.subject}")
     ```
   </Tab>
 </Tabs>
@@ -225,6 +215,18 @@ Set up webhooks so your agent gets notified instantly when emails arrive:
     console.log('Webhook secret:', data.data.webhook.secret);
     ```
   </Tab>
+  <Tab title="Python SDK">
+    ```python
+    result = jasni.webhooks.create(
+        url='https://your-server.com/webhook',
+        events=['email.received', 'email.sent'],
+        description='My first webhook'
+    )
+
+    # Save the secret! It's only shown once
+    print('Webhook secret:', result.webhook.secret)
+    ```
+  </Tab>
 </Tabs>
 
 <Warning>
@@ -234,16 +236,19 @@ Set up webhooks so your agent gets notified instantly when emails arrive:
 ## Next Steps
 
 <CardGroup cols={2}>
-  <Card title="TypeScript SDK" icon="npm" href="/sdks/typescript/overview">
-    Use the official SDK
+  <Card title="TypeScript SDK" icon="/icons-svg/code.svg" href="/sdks/typescript/overview">
+    Full-featured TypeScript/Node.js SDK
   </Card>
-  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+  <Card title="Python SDK" icon="/icons-svg/code.svg" href="/sdks/python/overview">
+    Full-featured Python SDK with async support
+  </Card>
+  <Card title="MCP Server" icon="/icons-svg/robot.svg" href="/sdks/mcp/overview">
+    Connect AI assistants like Claude directly
+  </Card>
+  <Card title="API Reference" icon="/icons-svg/docs.svg" href="/api-reference/introduction">
     Explore all endpoints
   </Card>
   <Card title="Webhooks" icon="/icons-svg/webhook.svg" href="/webhooks/overview">
     Get real-time notifications
-  </Card>
-  <Card title="Emails" icon="/icons-svg/inbox.svg" href="/concepts/emails">
-    Learn email operations
   </Card>
 </CardGroup>

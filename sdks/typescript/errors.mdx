@@ -42,7 +42,7 @@ Thrown when authentication fails (invalid or missing API key).
 
 ```typescript
 try {
-  await jasni.emails.list({ account: 'me@mail.jasni.ai' })
+  await jasni.emails.list({ account: 'me@jasnimail.com' })
 } catch (error) {
   if (error instanceof AuthenticationError) {
     console.error('Invalid API key. Please check your credentials.')
@@ -59,7 +59,7 @@ Thrown when the requested resource doesn't exist.
 
 ```typescript
 try {
-  await jasni.emails.get(999999, { account: 'me@mail.jasni.ai' })
+  await jasni.emails.get(999999, { account: 'me@jasnimail.com' })
 } catch (error) {
   if (error instanceof NotFoundError) {
     console.error('Email not found')
@@ -77,7 +77,7 @@ Thrown when request validation fails.
 ```typescript
 try {
   await jasni.emails.send({
-    from: 'me@mail.jasni.ai',
+    from: 'me@jasnimail.com',
     to: 'invalid-email',  // Invalid email format
     subject: 'Test',
   })
@@ -97,7 +97,7 @@ Thrown when the rate limit is exceeded.
 
 ```typescript
 try {
-  await jasni.emails.list({ account: 'me@mail.jasni.ai' })
+  await jasni.emails.list({ account: 'me@jasnimail.com' })
 } catch (error) {
   if (error instanceof RateLimitError) {
     console.error('Rate limit exceeded')
@@ -165,7 +165,7 @@ import {
 const jasni = new Jasni('jsk_your_api_key')
 
 try {
-  const { email } = await jasni.emails.get(123, { account: 'me@mail.jasni.ai' })
+  const { email } = await jasni.emails.get(123, { account: 'me@jasnimail.com' })
   console.log(email.subject)
 } catch (error) {
   if (error instanceof AuthenticationError) {
@@ -301,7 +301,7 @@ function sleep(ms: number): Promise<void> {
 
 // Usage
 const { emails } = await withRetry(() => 
-  jasni.emails.list({ account: 'me@mail.jasni.ai' })
+  jasni.emails.list({ account: 'me@jasnimail.com' })
 )
 ```
 

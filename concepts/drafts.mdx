@@ -5,16 +5,12 @@ description: "Save and manage email drafts"
 icon: "/icons-svg/compose.svg"
 ---
 
-## Overview
+Drafts allow you to save email messages before sending them. This is useful for composing emails over time, scheduling sends, or building approval workflows where AI agents compose responses for human review.
 
-Drafts allow you to save email messages before sending them. This is useful for composing emails over time, scheduling sends, or building approval workflows.
+## Properties
 
-## Draft Structure
-
-A draft has the same structure as a message, stored in the Drafts folder:
-
-| Field | Type | Description |
-|-------|------|-------------|
+| Property | Type | Description |
+|----------|------|-------------|
 | `uid` | integer | Unique identifier within the mailbox |
 | `from` | string | Sender email address |
 | `to` | string[] | Recipient email addresses |
@@ -25,136 +21,230 @@ A draft has the same structure as a message, stored in the Drafts folder:
 | `html` | string | HTML body |
 | `attachments` | object[] | List of attachments |
 
-## Operations
+## Fetching Drafts
 
-### Create a Draft
-
-Save a new draft:
-
-```json
-POST /api/v1/emails/drafts
-{
-  "account": "you@domain.com",
-  "to": ["recipient@example.com"],
-  "subject": "Work in progress",
-  "text": "This is a draft I'm working on...",
-  "html": "<p>This is a draft I'm working on...</p>"
-}
-```
-
-### List Drafts
-
-Retrieve all drafts:
+List drafts for an inbox with the `account` parameter:
 
 ```bash
-GET /api/v1/emails?account=you@domain.com&folder=Drafts
+GET /api/v1/emails/drafts?account=support-agent@jasnimail.com
 ```
-
-### Update a Draft
-
-Modify an existing draft:
-
-```json
-PUT /api/v1/emails/drafts/123
-{
-  "account": "you@domain.com",
-  "to": ["recipient@example.com", "another@example.com"],
-  "subject": "Updated subject",
-  "text": "Updated content..."
-}
-```
-
-### Send a Draft
-
-Convert a draft into a sent email:
-
-```json
-POST /api/v1/emails/drafts/123/send
-{
-  "account": "you@domain.com"
-}
-```
-
-<Note>
-  When you send a draft, it is automatically moved from the Drafts folder to Sent.
-</Note>
-
-### Delete a Draft
-
-Remove a draft without sending:
 
 ```bash
-DELETE /api/v1/emails/drafts/123?account=you@domain.com
+GET /api/v1/emails/drafts?account=sales-agent@jasnimail.com&limit=50
 ```
 
-## Use Cases
+## SDK Usage
 
-<AccordionGroup>
-  <Accordion title="Email Scheduling" icon="clock">
-    Create drafts and send them later at a scheduled time using your application logic.
-  </Accordion>
-  <Accordion title="Approval Workflows" icon="check-double">
-    Save emails as drafts, send them through an approval process, then send once approved.
-  </Accordion>
-  <Accordion title="AI Composition" icon="robot">
-    Let AI agents compose draft responses for human review before sending.
-  </Accordion>
-  <Accordion title="Template Storage" icon="copy">
-    Store commonly used email templates as drafts for quick access.
-  </Accordion>
-</AccordionGroup>
+Manage drafts programmatically using the Jasni SDKs.
 
-## AI Agent Workflow Example
-
-A common pattern for AI email agents:
-
-```javascript
-async function handleIncomingEmail(email) {
-  // 1. AI generates a response
-  const aiResponse = await generateAIResponse(email);
+<Tabs>
+  <Tab title="TypeScript">
+    **List Drafts**
+    
+    Retrieve all drafts from an inbox:
+    
+    ```typescript
+    import { Jasni } from 'jasni-sdk'
+    
+    const jasni = new Jasni('jsk_your_api_key')
+    
+    const { drafts, total } = await jasni.drafts.list({
+      account: 'support-agent@jasnimail.com',
+      limit: 50,
+    })
+    
+    console.log(`Found ${total} drafts:`)
+    drafts.forEach(draft => {
+      console.log(`- ${draft.subject}`)
+    })
+    ```
+    
+    **Get Draft**
+    
+    Retrieve a specific draft by UID:
+    
+    ```typescript
+    const { email } = await jasni.drafts.get(123, {
+      account: 'support-agent@jasnimail.com',
+    })
+    console.log(email.subject, email.text)
+    ```
+    
+    **Create Draft**
+    
+    Save a new draft email:
+    
+    ```typescript
+    const { uid } = await jasni.drafts.create({
+      account: 'support-agent@jasnimail.com',
+      to: 'customer@example.com',
+      subject: 'Work in progress',
+      text: 'This is a draft I am working on...',
+      html: '<p>This is a draft I am working on...</p>',
+    })
+    console.log('Created draft with UID:', uid)
+    ```
+    
+    | Parameter | Type | Required | Description |
+    |-----------|------|----------|-------------|
+    | `account` | `string` | Yes | Email account to save the draft in |
+    | `to` | `string \| string[]` | No | Recipient email address(es) |
+    | `subject` | `string` | No | Email subject |
+    | `text` | `string` | No | Plain text body |
+    | `html` | `string` | No | HTML body |
+    | `cc` | `string \| string[]` | No | CC recipients |
+    
+    **Update Draft**
+    
+    Modify an existing draft:
+    
+    ```typescript
+    const { uid } = await jasni.drafts.update({
+      account: 'support-agent@jasnimail.com',
+      uid: 123,
+      subject: 'Updated subject',
+      text: 'Updated content...',
+    })
+    console.log('Updated draft:', uid)
+    ```
+    
+    **Send Draft**
+    
+    Convert a draft into a sent email:
+    
+    ```typescript
+    const result = await jasni.drafts.send({
+      account: 'support-agent@jasnimail.com',
+      uid: 123,
+    })
+    console.log('Sent with message ID:', result.messageId)
+    ```
+    
+    <Note>
+      When you send a draft, it is automatically moved from the Drafts folder to Sent.
+    </Note>
+    
+    **Delete Draft**
+    
+    Remove a draft without sending:
+    
+    ```typescript
+    await jasni.drafts.delete({
+      account: 'support-agent@jasnimail.com',
+      uid: 123,
+    })
+    console.log('Draft deleted')
+    ```
+    
+  </Tab>
   
-  // 2. Save as draft for human review
-  const draft = await jasni.drafts.create({
-    account: 'support@yourcompany.com',
-    to: [email.from],
-    subject: `Re: ${email.subject}`,
-    text: aiResponse.text,
-    html: aiResponse.html
-  });
-  
-  // 3. Notify team for review
-  await notifyTeam({
-    message: 'New AI draft ready for review',
-    draftId: draft.uid,
-    originalEmail: email.subject
-  });
-  
-  // 4. Team reviews and either edits or approves
-  // 5. Send the draft when approved
-}
-```
-
-## Best Practices
-
-<AccordionGroup>
-  <Accordion title="Auto-save frequently" icon="floppy-disk">
-    If building a compose UI, auto-save drafts every few seconds to prevent data loss.
-  </Accordion>
-  <Accordion title="Clean up old drafts" icon="trash">
-    Periodically review and delete old drafts that are no longer needed.
-  </Accordion>
-  <Accordion title="Use drafts for review workflows" icon="eye">
-    For sensitive communications, use drafts to enable human review before sending.
-  </Accordion>
-</AccordionGroup>
+  <Tab title="Python">
+    **List Drafts**
+    
+    Retrieve all drafts from an inbox:
+    
+    ```python
+    from jasni import Jasni
+    
+    jasni = Jasni("jsk_your_api_key")
+    
+    result = jasni.drafts.list(
+        account="support-agent@jasnimail.com",
+        limit=50
+    )
+    
+    print(f"Found {result.total} drafts:")
+    for draft in result.drafts:
+        print(f"- {draft.subject}")
+    ```
+    
+    **Get Draft**
+    
+    Retrieve a specific draft by UID:
+    
+    ```python
+    result = jasni.drafts.get(123, account="support-agent@jasnimail.com")
+    print(result.email.subject, result.email.text)
+    ```
+    
+    **Create Draft**
+    
+    Save a new draft email:
+    
+    ```python
+    result = jasni.drafts.create(
+        account="support-agent@jasnimail.com",
+        to="customer@example.com",
+        subject="Work in progress",
+        text="This is a draft I am working on...",
+        html="<p>This is a draft I am working on...</p>"
+    )
+    print(f"Created draft with UID: {result.uid}")
+    ```
+    
+    | Parameter | Type | Required | Description |
+    |-----------|------|----------|-------------|
+    | `account` | `str` | Yes | Email account to save the draft in |
+    | `to` | `str \| list[str]` | No | Recipient email address(es) |
+    | `subject` | `str` | No | Email subject |
+    | `text` | `str` | No | Plain text body |
+    | `html` | `str` | No | HTML body |
+    | `cc` | `str \| list[str]` | No | CC recipients |
+    
+    **Update Draft**
+    
+    Modify an existing draft:
+    
+    ```python
+    result = jasni.drafts.update(
+        account="support-agent@jasnimail.com",
+        uid=123,
+        subject="Updated subject",
+        text="Updated content..."
+    )
+    print(f"Updated draft: {result.uid}")
+    ```
+    
+    **Send Draft**
+    
+    Convert a draft into a sent email:
+    
+    ```python
+    result = jasni.drafts.send(
+        account="support-agent@jasnimail.com",
+        uid=123
+    )
+    print(f"Sent with message ID: {result.message_id}")
+    ```
+    
+    <Note>
+      When you send a draft, it is automatically moved from the Drafts folder to Sent.
+    </Note>
+    
+    **Delete Draft**
+    
+    Remove a draft without sending:
+    
+    ```python
+    jasni.drafts.delete(account="support-agent@jasnimail.com", uid=123)
+    print("Draft deleted")
+    ```
+  </Tab>
+</Tabs>
 
 ## Related
 
 <CardGroup cols={2}>
-  <Card title="Messages" icon="envelope" href="/concepts/messages">
-    Learn about messages
+  <Card title="Messages" icon="/icons-svg/message.svg" href="/concepts/messages">
+    Learn about email messages
   </Card>
-  <Card title="Send API" icon="paper-plane" href="/api-reference/emails/send">
-    Send email endpoint
+  <Card title="TypeScript SDK" icon="/icons-svg/code.svg" href="/sdks/typescript/drafts">
+    Full TypeScript SDK reference for drafts
+  </Card>
+  <Card title="Python SDK" icon="/icons-svg/code.svg" href="/sdks/python/drafts">
+    Full Python SDK reference for drafts
+  </Card>
+  <Card title="Webhooks" icon="/icons-svg/webhook.svg" href="/concepts/webhooks">
+    Get notified of new messages
   </Card>
 </CardGroup>

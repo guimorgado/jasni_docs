@@ -42,7 +42,7 @@ Raised when authentication fails (invalid or missing API key).
 
 ```python
 try:
-    jasni.emails.list(account="me@mail.jasni.ai")
+    jasni.emails.list(account="me@jasnimail.com")
 except AuthenticationError:
     print("Invalid API key. Please check your credentials.")
 ```
@@ -56,7 +56,7 @@ Raised when the requested resource doesn't exist.
 
 ```python
 try:
-    jasni.emails.get(uid=999999, account="me@mail.jasni.ai")
+    jasni.emails.get(uid=999999, account="me@jasnimail.com")
 except NotFoundError:
     print("Email not found")
 ```
@@ -71,7 +71,7 @@ Raised when request validation fails.
 ```python
 try:
     jasni.emails.send(
-        from_="me@mail.jasni.ai",
+        from_="me@jasnimail.com",
         to="invalid-email",  # Invalid email format
         subject="Test",
     )
@@ -88,7 +88,7 @@ Raised when the rate limit is exceeded.
 
 ```python
 try:
-    jasni.emails.list(account="me@mail.jasni.ai")
+    jasni.emails.list(account="me@jasnimail.com")
 except RateLimitError as e:
     print("Rate limit exceeded")
     if e.retry_after:
@@ -145,7 +145,7 @@ from jasni.errors import (
 jasni = Jasni("jsk_your_api_key")
 
 try:
-    result = jasni.emails.get(uid=123, account="me@mail.jasni.ai")
+    result = jasni.emails.get(uid=123, account="me@jasnimail.com")
     print(result.email.subject)
 except AuthenticationError:
     print("Invalid API key")
@@ -248,7 +248,7 @@ def with_retry(
 
 # Usage
 result = with_retry(
-    lambda: jasni.emails.list(account="me@mail.jasni.ai")
+    lambda: jasni.emails.list(account="me@jasnimail.com")
 )
 ```
 
@@ -290,7 +290,7 @@ async def main():
     jasni = AsyncJasni("jsk_your_api_key")
     
     result = await with_retry_async(
-        lambda: jasni.emails.list(account="me@mail.jasni.ai")
+        lambda: jasni.emails.list(account="me@jasnimail.com")
     )
     
     await jasni.close()
@@ -320,7 +320,7 @@ def jasni_client(api_key: str):
 
 # Usage
 with jasni_client("jsk_your_api_key") as jasni:
-    result = jasni.emails.list(account="me@mail.jasni.ai")
+    result = jasni.emails.list(account="me@jasnimail.com")
     print(f"Found {result.total} emails")
 ```
 
@@ -423,7 +423,7 @@ jasni = Jasni("jsk_your_api_key")
 try:
     send_email_with_error_handling(
         jasni,
-        from_="me@mail.jasni.ai",
+        from_="me@jasnimail.com",
         to="recipient@example.com",
         subject="Hello!",
         text="This is a test email.",

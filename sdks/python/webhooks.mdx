@@ -70,9 +70,12 @@ print(f"Webhook Secret: {result.webhook.secret}")
 |-------|-------------|
 | `email.received` | New email received |
 | `email.sent` | Email sent |
+| `email.delivered` | Email delivered to recipient's server |
 | `email.bounced` | Email bounced |
 | `email.spam` | Email marked as spam |
+| `email.rejected` | Email rejected before delivery |
 | `email.deleted` | Email deleted |
+| `domain.verified` | Custom domain verified |
 
 ### Response
 
@@ -224,20 +227,20 @@ WEBHOOK_SECRET = "your-webhook-secret"
 @app.route("/jasni-webhook", methods=["POST"])
 def handle_webhook():
     signature = request.headers.get("X-Jasni-Signature")
-    payload = request.data
+    payload = request.data  # Use raw body, not request.json
     
     if not verify_signature(payload, signature, WEBHOOK_SECRET):
         return jsonify({"error": "Invalid signature"}), 401
     
     event = request.json
-    print(f"Received event: {event['type']}")
+    print(f"Received event: {event['event']}")
     
-    if event["type"] == "email.received":
+    if event["event"] == "email.received":
         print(f"New email from: {event['data']['from']}")
-    elif event["type"] == "email.sent":
+    elif event["event"] == "email.sent":
         print(f"Email sent to: {event['data']['to']}")
-    elif event["type"] == "email.bounced":
-        print(f"Email bounced: {event['data']['bounce_reason']}")
+    elif event["event"] == "email.bounced":
+        print(f"Email bounced: {event['data']['bounceReason']}")
     
     return jsonify({"status": "ok"}), 200
 
@@ -258,21 +261,21 @@ WEBHOOK_SECRET = "your-webhook-secret"
 @app.post("/jasni-webhook")
 async def handle_webhook(request: Request):
     signature = request.headers.get("X-Jasni-Signature")
-    payload = await request.body()
+    payload = await request.body()  # Use raw body
     
     if not verify_signature(payload, signature, WEBHOOK_SECRET):
         raise HTTPException(status_code=401, detail="Invalid signature")
     
     event = await request.json()
-    print(f"Received event: {event['type']}")
+    print(f"Received event: {event['event']}")
     
-    match event["type"]:
+    match event["event"]:
         case "email.received":
             print(f"New email from: {event['data']['from']}")
         case "email.sent":
             print(f"Email sent to: {event['data']['to']}")
         case "email.bounced":
-            print(f"Email bounced: {event['data']['bounce_reason']}")
+            print(f"Email bounced: {event['data']['bounceReason']}")
     
     return {"status": "ok"}
 ```
@@ -283,13 +286,14 @@ All webhook payloads follow this structure:
 
 ```python
 {
-    "id": "evt_123abc",           # Unique event ID
-    "type": "email.received",     # Event type
-    "created_at": "2024-01-15T10:00:00Z",  # ISO timestamp
+    "event": "email.received",     # Event type
+    "timestamp": "2024-01-15T10:00:00Z",  # ISO timestamp when event occurred
     "data": {
-        "account": "me@mail.jasni.ai",  # Email account
-        "uid": 123,                      # Email UID
-        "message_id": "<msg@example.com>",  # Message ID
+        # Fields vary by event type
+        # For email events:
+        "id": "12345",                   # Email ID
+        "messageId": "<msg@example.com>",  # RFC 2822 Message-ID
+        "account": "me@jasnimail.com",   # Email account
         "from": "sender@example.com",    # Sender
         "to": ["recipient@example.com"], # Recipients
         "subject": "Hello!",             # Subject

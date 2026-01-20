@@ -12,139 +12,127 @@ Once you've added custom domains to Jasni, you'll need to monitor their health, 
 
 Access your domain overview in the [Jasni Dashboard](https://app.jasni.ai):
 
-1. Navigate to **Settings** > **Domains**
+1. Navigate to **Domains** (under the Mail section in the sidebar)
 2. View the list of all configured domains
 3. Click on any domain to see detailed status
 
-### Domain Health Indicators
+### Domain Status Indicators
 
-| Indicator | Status | Action Required |
-|-----------|--------|-----------------|
-| DNS Verified | All records valid | None |
-| DNS Warning | Partial verification | Review DNS records |
-| DNS Error | Records missing/invalid | Update DNS configuration |
-| Inactive | Domain not in use | Consider removing or reactivating |
+| Status | Description | Action Required |
+|--------|-------------|-----------------|
+| Fully Verified | All DNS records valid (TXT, MX, SPF, DKIM) | None |
+| Partial Setup | Domain verified but some records missing | Add missing DNS records |
+| Pending | Domain ownership not yet verified | Add TXT verification record |
 
-## Monitoring Domain Reputation
+Each domain shows individual verification status for:
+- **Domain**: TXT verification record
+- **MX**: Mail server record (for receiving)
+- **SPF**: Sender policy record (for sending)
+- **DKIM**: Email signing record (for sending)
 
-Your domain's reputation directly impacts email deliverability. Monitor these metrics:
+## Re-verifying DNS Records
 
-### Key Metrics
+If you've updated your DNS configuration or need to check verification status:
 
-<CardGroup cols={3}>
-  <Card title="Bounce Rate" icon="/icons-svg/alert.svg">
-    Keep below 2%
-  </Card>
-  <Card title="Spam Complaints" icon="/icons-svg/trash.svg">
-    Keep below 0.1%
-  </Card>
-  <Card title="Delivery Rate" icon="/icons-svg/check.svg">
-    Aim for 95%+
-  </Card>
-</CardGroup>
+1. Go to **Domains** (under the Mail section in the sidebar)
+2. Click on your domain
+3. Click **Verify DNS**
+4. Jasni will check all DNS records (TXT, MX, SPF, DKIM)
 
-### Viewing Domain Analytics
-
-```typescript
-// Get domain statistics via API
-const stats = await jasni.domains.getStats({
-  domain: 'yourdomain.com',
-  period: '30d'
-})
-
-console.log('Emails sent:', stats.sent)
-console.log('Delivered:', stats.delivered)
-console.log('Bounced:', stats.bounced)
-console.log('Complaints:', stats.complaints)
-```
-
-## Updating DNS Records
-
-If you need to update DNS records (e.g., after rotating DKIM keys):
-
-### Re-verify DNS
-
-1. Go to **Settings** > **Domains** > **[Your Domain]**
-2. Click **Re-verify DNS**
-3. Jasni will check all DNS records again
-
-### Rotating DKIM Keys
-
-For security best practices, rotate DKIM keys periodically:
-
-1. Generate new DKIM keys in your dashboard
-2. Add the new DKIM records to DNS
-3. Wait for DNS propagation
-4. Verify new records in Jasni
-5. Remove old DKIM records after 48 hours
-
-<Warning>
-  Keep old DKIM records active for at least 48 hours after adding new ones. This ensures emails in transit can still be verified.
-</Warning>
+<Note>
+  DNS changes can take up to 48 hours to propagate. If verification fails, wait and try again later.
+</Note>
 
 ## Managing Email Addresses
 
 ### Listing Addresses
 
-View all email addresses configured for a domain:
+View all email accounts for your user:
 
-```typescript
-const addresses = await jasni.accounts.list({
-  domain: 'yourdomain.com'
-})
+<CodeGroup>
+```typescript TypeScript
+const { accounts, total } = await jasni.accounts.list()
 
-addresses.forEach(addr => {
-  console.log(`${addr.email} - ${addr.status}`)
+accounts.forEach(account => {
+  console.log(`${account.email} - ${account.name}`)
 })
 ```
+
+```python Python
+response = jasni.accounts.list()
+
+for account in response.accounts:
+    print(f"{account.email} - {account.name}")
+```
+</CodeGroup>
 
 ### Creating New Addresses
 
-```typescript
-const account = await jasni.accounts.create({
-  email: 'newagent@yourdomain.com',
-  name: 'New Agent',
-  type: 'agent'
+Create a new email account with a custom or auto-generated username:
+
+<CodeGroup>
+```typescript TypeScript
+// With custom username
+const { account } = await jasni.accounts.create({
+  username: 'support',
+  name: 'Support Team',
+})
+// Creates: support@jasnimail.com
+
+// With auto-generated username
+const { account } = await jasni.accounts.create({
+  name: 'My Account',
 })
 ```
 
-### Deactivating Addresses
+```python Python
+# With custom username
+result = jasni.accounts.create(
+    username="support",
+    name="Support Team"
+)
+# Creates: support@jasnimail.com
 
-Temporarily disable an email address without deleting it:
+# With auto-generated username
+result = jasni.accounts.create(name="My Account")
+```
+</CodeGroup>
 
-```typescript
-await jasni.accounts.update({
-  email: 'oldagent@yourdomain.com',
-  status: 'inactive'
+### Updating Account Display Name
+
+Update the display name of an email account:
+
+<CodeGroup>
+```typescript TypeScript
+const { account } = await jasni.accounts.update({
+  email: 'support@jasnimail.com',
+  name: 'Customer Support',
 })
 ```
 
-## Domain Settings
-
-### Configuring Default Behavior
-
-Set default settings for all emails from a domain:
-
-| Setting | Description | Options |
-|---------|-------------|---------|
-| Default Reply-To | Where replies should go | Email address |
-| Tracking | Open/click tracking | Enabled/Disabled |
-| Unsubscribe Header | List-Unsubscribe header | Auto/Manual/Disabled |
-| Footer | Default email footer | HTML content |
-
-### Updating Domain Settings
-
-```typescript
-await jasni.domains.update({
-  domain: 'yourdomain.com',
-  settings: {
-    defaultReplyTo: 'support@yourdomain.com',
-    trackOpens: true,
-    trackClicks: true,
-    addUnsubscribeHeader: true
-  }
-})
+```python Python
+result = jasni.accounts.update(
+    "support@jasnimail.com",
+    name="Customer Support"
+)
 ```
+</CodeGroup>
+
+### Deleting an Account
+
+<CodeGroup>
+```typescript TypeScript
+await jasni.accounts.delete('oldaccount@jasnimail.com')
+```
+
+```python Python
+jasni.accounts.delete("oldaccount@jasnimail.com")
+```
+</CodeGroup>
+
+<Warning>
+  Deleting an account will permanently remove all associated emails and data. This action cannot be undone.
+</Warning>
 
 ## Handling Domain Issues
 
@@ -180,9 +168,10 @@ await jasni.domains.update({
 
 If you no longer need a domain:
 
-1. Go to **Settings** > **Domains** > **[Your Domain]**
-2. Click **Remove Domain**
-3. Confirm the removal
+1. Go to **Domains** (under the Mail section)
+2. Click on the domain you want to remove
+3. Click the trash icon next to the domain name
+4. Confirm the deletion
 
 <Warning>
   Removing a domain will:
@@ -199,24 +188,6 @@ If you no longer need a domain:
 - Update any integrations using the domain
 - Export any necessary data or logs
 - Update webhooks to use new addresses
-
-## Domain Warm-Up
-
-For new domains or domains with low sending volume, implement a warm-up strategy:
-
-### Warm-Up Schedule
-
-| Week | Daily Volume | Notes |
-|------|--------------|-------|
-| 1 | 50-100 | Only engaged recipients |
-| 2 | 200-500 | Gradually increase |
-| 3 | 500-1000 | Monitor metrics closely |
-| 4 | 1000-2500 | Scale based on performance |
-| 5+ | Full volume | Maintain good practices |
-
-<Tip>
-  Start by sending to your most engaged recipients who are likely to open and interact with your emails. This builds positive reputation signals.
-</Tip>
 
 ## Next Steps
 
