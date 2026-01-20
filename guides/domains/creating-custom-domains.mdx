@@ -31,49 +31,63 @@ Navigate to your [Jasni Dashboard](https://app.jasni.ai) and add your domain:
 
 ## Step 2: Configure DNS Records
 
-After adding your domain, you'll need to configure several DNS records for authentication and deliverability.
+After adding your domain, you'll need to configure several DNS records. The exact values are shown in your dashboard.
 
-### SPF Record
+### 1. Verification Record (TXT)
 
-SPF (Sender Policy Framework) authorizes Jasni to send emails on behalf of your domain.
+This verifies you own the domain.
 
 | Type | Host | Value |
 |------|------|-------|
-| TXT | @ | `v=spf1 include:_spf.jasni.ai ~all` |
+| TXT | `_jasni-verify` | `jasni-verify-{your-token}` |
+
+<Note>
+  The verification token is unique to your domain. Copy the exact value from your dashboard.
+</Note>
+
+### 2. MX Record
+
+Routes incoming email to Jasni servers.
+
+| Type | Host | Priority | Value |
+|------|------|----------|-------|
+| MX | @ | 10 | `mail.jasnimail.com` |
+
+### 3. SPF Record (TXT)
+
+Authorizes Jasni to send emails on behalf of your domain.
+
+| Type | Host | Value |
+|------|------|-------|
+| TXT | @ | `v=spf1 ip4:57.129.66.37 a:mail.jasnimail.com mx ~all` |
 
 <Warning>
-  If you already have an SPF record, add `include:_spf.jasni.ai` to your existing record instead of creating a new one. Multiple SPF records can cause delivery issues.
+  If you already have an SPF record, add `ip4:57.129.66.37 a:mail.jasnimail.com` to your existing record instead of creating a new one. Multiple SPF records will cause delivery issues.
 </Warning>
 
-### DKIM Records
+### 4. DKIM Record (TXT)
 
-DKIM (DomainKeys Identified Mail) adds a digital signature to verify your emails haven't been tampered with.
-
-| Type | Host | Value |
-|------|------|-------|
-| CNAME | `jasni1._domainkey` | `jasni1._domainkey.jasni.ai` |
-| CNAME | `jasni2._domainkey` | `jasni2._domainkey.jasni.ai` |
-
-### DMARC Record
-
-DMARC (Domain-based Message Authentication, Reporting & Conformance) tells receiving servers how to handle emails that fail authentication.
+Adds a digital signature to verify your emails haven't been tampered with.
 
 | Type | Host | Value |
 |------|------|-------|
-| TXT | `_dmarc` | `v=DMARC1; p=quarantine; rua=mailto:dmarc@yourdomain.com` |
+| TXT | `mail._domainkey` | `v=DKIM1; k=rsa; p={your-public-key}` |
+
+<Tip>
+  The DKIM public key is unique to your domain and generated automatically. Copy the full value from your dashboard—it will be a long string starting with `v=DKIM1; k=rsa; p=`.
+</Tip>
+
+### 5. DMARC Record (TXT) - Recommended
+
+Tells receiving servers how to handle emails that fail authentication.
+
+| Type | Host | Value |
+|------|------|-------|
+| TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:dmarc@yourdomain.com` |
 
 <Tip>
   Start with `p=none` during setup, then move to `p=quarantine` or `p=reject` once you've confirmed everything works correctly.
 </Tip>
-
-### MX Records (for receiving)
-
-If you want to receive emails through Jasni, add these MX records:
-
-| Type | Host | Priority | Value |
-|------|------|----------|-------|
-| MX | @ | 10 | `mx1.jasni.ai` |
-| MX | @ | 20 | `mx2.jasni.ai` |
 
 ## Step 3: Verify Your Domain
 
@@ -153,8 +167,8 @@ This helps with email organization and allows different sending reputations for 
   <Card title="Send Emails" icon="/icons-svg/send.svg" href="/guides/sending-receiving-email">
     Start sending from your domain
   </Card>
-  <Card title="Webhooks" icon="/icons-svg/webhook.svg" href="/webhooks/overview">
-    Set up email notifications
+  <Card title="SPF, DKIM & DMARC" icon="/icons-svg/keys.svg" href="/resources/security/spf-dkim-dmarc">
+    Learn more about email authentication
   </Card>
   <Card title="Best Practices" icon="/icons-svg/check.svg" href="/webhooks/best-practices">
     Optimize deliverability

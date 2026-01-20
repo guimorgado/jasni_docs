@@ -1,102 +1,194 @@
 ---
 title: 'SPF, DKIM & DMARC'
 description: 'Configure email authentication to improve deliverability and protect your domain'
-icon: 'shield-check'
+icon: '/icons-svg/security.svg'
 ---
 
-Email authentication is essential for ensuring your emails reach recipients' inboxes and protecting your domain from spoofing attacks.
+## Overview
+
+Email authentication is essential for ensuring your emails reach recipients' inboxes and protecting your domain from spoofing attacks. This guide covers the three main protocols: SPF, DKIM, and DMARC.
 
 <CardGroup cols={3}>
-  <Card title="SPF" icon="shield-check">
+  <Card title="SPF" icon="/icons-svg/security.svg">
     Specifies which mail servers can send email on behalf of your domain.
   </Card>
   
-  <Card title="DKIM" icon="signature">
+  <Card title="DKIM" icon="/icons-svg/keys.svg">
     Adds a digital signature to verify emails haven't been tampered with.
   </Card>
   
-  <Card title="DMARC" icon="shield-halved">
+  <Card title="DMARC" icon="/icons-svg/lock.svg">
     Tells receiving servers what to do with emails that fail authentication.
   </Card>
 </CardGroup>
 
-## Required DNS Records
+## SPF (Sender Policy Framework)
 
-When you add a custom domain in Jasni, you'll need to configure these DNS records:
+SPF allows you to specify which mail servers are permitted to send email on behalf of your domain.
 
-### SPF Record
+### How SPF Works
+
+1. You publish an SPF record in your domain's DNS
+2. When someone receives an email from your domain, their mail server checks the SPF record
+3. If the sending server is listed in the SPF record, the check passes
+4. If not, the email may be marked as spam or rejected
+
+### Setting Up SPF for Jasni
+
+Add the following TXT record to your domain's DNS:
 
 | Type | Host | Value |
 |------|------|-------|
-| TXT | @ | `v=spf1 include:_spf.jasni.ai ~all` |
+| TXT | @ | `v=spf1 ip4:57.129.66.37 a:mail.jasnimail.com mx ~all` |
 
 <Warning>
-  If you already have an SPF record, add `include:_spf.jasni.ai` to your existing record. Multiple SPF records will cause delivery issues.
+  If you already have an SPF record, add `ip4:57.129.66.37 a:mail.jasnimail.com` to your existing record. Multiple SPF records will cause delivery failures.
 </Warning>
 
-### DKIM Records
+### SPF Record Explained
+
+| Component | Meaning |
+|-----------|---------|
+| `v=spf1` | SPF version 1 |
+| `ip4:57.129.66.37` | Authorize this IP address |
+| `a:mail.jasnimail.com` | Authorize this mail server |
+| `mx` | Authorize servers in MX records |
+| `~all` | Soft fail for unauthorized servers |
+
+## DKIM (DomainKeys Identified Mail)
+
+DKIM adds a cryptographic signature to your emails, allowing receivers to verify the email hasn't been modified in transit.
+
+### How DKIM Works
+
+1. Jasni signs your outgoing emails with a private key
+2. The signature is added to the email headers
+3. Receiving servers retrieve the public key from your DNS
+4. The signature is verified against the public key
+
+### Setting Up DKIM for Jasni
+
+Add the following TXT record to your domain's DNS:
 
 | Type | Host | Value |
 |------|------|-------|
-| CNAME | `jasni1._domainkey` | `jasni1._domainkey.jasni.ai` |
-| CNAME | `jasni2._domainkey` | `jasni2._domainkey.jasni.ai` |
+| TXT | `mail._domainkey` | `v=DKIM1; k=rsa; p={your-public-key}` |
 
 <Tip>
-  You can find your specific DKIM records in your [Jasni Dashboard](https://app.jasni.ai) under **Domains**.
+  The DKIM public key is unique to your domain. Copy the exact value from your [Jasni Dashboard](https://app.jasni.ai) under **Domains**.
 </Tip>
 
-### DMARC Record
+### Verifying DKIM Setup
 
-| Type | Host | Value |
-|------|------|-------|
-| TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:dmarc@yourdomain.com` |
+After adding the DKIM record, verify it using:
 
-Start with `p=none` to monitor, then move to `p=quarantine` or `p=reject` once everything works.
+```bash
+dig mail._domainkey.yourdomain.com TXT
+```
 
-| Policy | What it does |
-|--------|--------------|
+You should see a response containing `v=DKIM1; k=rsa; p=...`
+
+## DMARC (Domain-based Message Authentication, Reporting, and Conformance)
+
+DMARC builds on SPF and DKIM to provide instructions to receiving mail servers about what to do with emails that fail authentication checks.
+
+### How DMARC Works
+
+1. You publish a DMARC policy in your DNS
+2. Receiving servers check if the email passes SPF and/or DKIM
+3. If authentication fails, the server follows your DMARC policy
+4. Reports are sent to you about authentication results
+
+### Setting Up DMARC
+
+Start with a monitoring-only policy, then gradually increase enforcement.
+
+#### Stage 1: Monitor Only
+
+```
+v=DMARC1; p=none; rua=mailto:dmarc@yourdomain.com
+```
+
+This policy takes no action on failures, just monitors and sends reports.
+
+#### Stage 2: Quarantine
+
+```
+v=DMARC1; p=quarantine; pct=25; rua=mailto:dmarc@yourdomain.com
+```
+
+This policy sends failing emails to spam. Start with `pct=25` and gradually increase to 100%.
+
+#### Stage 3: Reject
+
+```
+v=DMARC1; p=reject; rua=mailto:dmarc@yourdomain.com
+```
+
+This policy rejects all emails that fail authentication.
+
+### DMARC Policy Options
+
+| Policy | Action |
+|--------|--------|
 | `p=none` | Monitor only, no action taken |
 | `p=quarantine` | Send failing emails to spam |
 | `p=reject` | Reject failing emails entirely |
 
-### MX Records (for receiving)
+## Verification Checklist
 
-If you want to receive emails through Jasni:
-
-| Type | Host | Priority | Value |
-|------|------|----------|-------|
-| MX | @ | 10 | `mx1.jasni.ai` |
-| MX | @ | 20 | `mx2.jasni.ai` |
-
-## Verify Your Setup
-
-After adding DNS records, verify them in your terminal:
-
-```bash
-# Check SPF
-dig yourdomain.com TXT | grep spf
-
-# Check DKIM
-dig jasni1._domainkey.yourdomain.com CNAME
-
-# Check DMARC
-dig _dmarc.yourdomain.com TXT
-```
-
-Or use your [Jasni Dashboard](https://app.jasni.ai) to verify all records automatically.
+<Steps>
+  <Step title="Add MX Record">
+    | Type | Host | Priority | Value |
+    |------|------|----------|-------|
+    | MX | @ | 10 | `mail.jasnimail.com` |
+  </Step>
+  
+  <Step title="Add Verification Record">
+    | Type | Host | Value |
+    |------|------|-------|
+    | TXT | `_jasni-verify` | `jasni-verify-{your-token}` |
+  </Step>
+  
+  <Step title="Add SPF Record">
+    ```bash
+    dig yourdomain.com TXT | grep spf
+    ```
+    Ensure `ip4:57.129.66.37` is present.
+  </Step>
+  
+  <Step title="Add DKIM Record">
+    ```bash
+    dig mail._domainkey.yourdomain.com TXT
+    ```
+    Should return `v=DKIM1; k=rsa; p=...`
+  </Step>
+  
+  <Step title="Add DMARC Record">
+    ```bash
+    dig _dmarc.yourdomain.com TXT
+    ```
+    Should show your DMARC policy.
+  </Step>
+  
+  <Step title="Verify in Dashboard">
+    Use the **Verify DNS** button in your [Jasni Dashboard](https://app.jasni.ai) to confirm all records.
+  </Step>
+</Steps>
 
 ## Troubleshooting
 
 <AccordionGroup>
   <Accordion title="SPF check is failing">
     - Make sure you only have one SPF record (multiple records cause failures)
-    - Verify `include:_spf.jasni.ai` is present in your record
+    - Verify `ip4:57.129.66.37` and `a:mail.jasnimail.com` are present
     - Wait for DNS propagation (can take up to 48 hours)
   </Accordion>
   
   <Accordion title="DKIM signature is invalid">
-    - Verify the CNAME records point to the correct Jasni servers
-    - Check for typos in the `_domainkey` subdomain
+    - Ensure you're using a TXT record, not CNAME
+    - The host should be `mail._domainkey`
+    - Copy the full DKIM value from your dashboard
     - Wait for DNS propagation
   </Accordion>
   
@@ -107,13 +199,21 @@ Or use your [Jasni Dashboard](https://app.jasni.ai) to verify all records automa
   </Accordion>
   
   <Accordion title="Emails still going to spam">
-    - Verify all records are correctly configured and passing
+    - Verify all records are correctly configured
     - New domains need a warm-up period to build reputation
-    - Avoid spammy content (excessive caps, too many links, misleading subjects)
+    - Avoid spammy content (excessive caps, too many links)
     - Check if your domain is on any blocklists
   </Accordion>
 </AccordionGroup>
 
-<Card title="Need Help?" icon="life-ring" href="/resources/support">
+## Best Practices
+
+1. **Start with monitoring**: Use `p=none` for DMARC initially to collect data
+2. **Implement gradually**: Increase DMARC enforcement percentage over time
+3. **Monitor reports**: Review DMARC reports to identify issues
+4. **Keep records updated**: Update authentication records if you change email providers
+5. **Test regularly**: Send test emails and verify authentication headers
+
+<Card title="Need Help?" icon="/icons-svg/life-ring.svg" href="/resources/support">
   Contact our support team if you're having trouble with email authentication.
 </Card>

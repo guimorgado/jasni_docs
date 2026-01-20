@@ -74,7 +74,7 @@
               "resources/support",
               {
                 "group": "Security & Privacy",
-                "icon": "lock",
+                "icon": "/icons-svg/lock.svg",
                 "pages": [
                   "resources/security/spf-dkim-dmarc"
                 ]
@@ -159,8 +159,12 @@
   "navbar": {
     "links": [
       {
-        "label": "Support",
+        "label": "support@jasni.ai",
         "href": "mailto:support@jasni.ai"
+      },
+      {
+        "label": "Discord",
+        "href": "https://discord.gg/Yyd759tt38"
       }
     ],
     "primary": {
