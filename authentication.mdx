@@ -79,25 +79,45 @@ Authorization: Bearer jsk_your_api_key
 
 ## Rate Limiting
 
-To protect the API from abuse and ensure fair usage, Jasni implements rate limiting:
+To protect the API from abuse and ensure fair usage, Jasni implements rate limiting based on your plan.
 
-| Plan | Rate Limit |
-|------|------------|
-| Free | 100 requests/minute |
-| Pro | 1,000 requests/minute |
-| Enterprise | Custom |
+<Note>
+  Rate limits are **per account**, not per API key. Creating multiple API keys does not increase your rate limits. All API keys under your account share the same rate limit pool.
+</Note>
+
+| Plan | Read | Write | Send Email | Overall |
+|------|------|-------|------------|---------|
+| Free | 100/min | 30/min | 10/min | 200/min |
+| Starter | 500/min | 150/min | 50/min | 1,000/min |
+| Pro | 2,000/min | 600/min | 200/min | 5,000/min |
+
+**Operation types:**
+- **Read**: GET requests (listing emails, fetching data)
+- **Write**: POST, PATCH, DELETE requests (creating, updating, deleting)
+- **Send Email**: Sending emails via `/emails/send`, `/emails/{id}/reply`, `/emails/{id}/forward`
+- **Overall**: Total requests across all operations
 
 When you exceed the rate limit, you'll receive a `429 Too Many Requests` response:
 
 ```json
 {
   "success": false,
-  "error": "Rate limit exceeded. Please try again later."
+  "error": "Rate limit exceeded",
+  "retryAfter": 45
 }
 ```
 
+Rate limit headers are included in every response:
+
+| Header | Description |
+|--------|-------------|
+| `X-RateLimit-Limit` | Maximum requests allowed in the current window |
+| `X-RateLimit-Remaining` | Requests remaining in the current window |
+| `X-RateLimit-Reset` | Unix timestamp when the limit resets |
+| `Retry-After` | Seconds to wait before retrying (only on 429) |
+
 <Tip>
-  Implement exponential backoff in your code to handle rate limits gracefully.
+  Implement exponential backoff in your code to handle rate limits gracefully. Check the `Retry-After` header for the recommended wait time.
 </Tip>
 
 ## Error Responses

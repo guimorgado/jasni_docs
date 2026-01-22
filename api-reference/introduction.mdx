@@ -69,14 +69,28 @@ Content-Type: application/json
 
 ## Rate Limits
 
-| Plan | Requests/Minute |
-|------|----------------|
-| Free | 100 |
-| Pro | 1,000 |
-| Enterprise | Custom |
+Rate limits are **per account** (not per API key) and vary by plan and operation type:
+
+| Plan | Read | Write | Send Email | Overall |
+|------|------|-------|------------|---------|
+| Free | 100/min | 30/min | 10/min | 200/min |
+| Starter | 500/min | 150/min | 50/min | 1,000/min |
+| Pro | 2,000/min | 600/min | 200/min | 5,000/min |
+
+<Note>
+  All API keys under your account share the same rate limit pool. Creating multiple keys does not increase your limits.
+</Note>
+
+Rate limit headers are included in every response:
+
+| Header | Description |
+|--------|-------------|
+| `X-RateLimit-Limit` | Maximum requests allowed |
+| `X-RateLimit-Remaining` | Requests remaining in current window |
+| `X-RateLimit-Reset` | Unix timestamp when the limit resets |
 
 <Tip>
-  Implement exponential backoff to handle rate limits gracefully.
+  Implement exponential backoff to handle rate limits gracefully. Check the `Retry-After` header for the recommended wait time.
 </Tip>
 
 ## Pagination
